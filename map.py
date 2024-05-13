@@ -5,12 +5,12 @@ import pygame
 
 # 加载文件数据
 def load_data(filename):
-    map = []
+    map_data = []
     with open(os.path.join(filename)) as data:
         data = csv.reader(data, delimiter=',')
         for row in data:
-            map.append(list(row))
-    return map
+            map_data.append(list(row))
+    return map_data
 
 
 # 地图格子信息
@@ -54,18 +54,21 @@ class World(object):
                 col_count += 1
             row_count += 1
 
-    def draw(self):
+    def draw(self, viewport):
         for tile in self.tile_list:
-            screen.blit(tile.type[0], tile.type[1])
+            # 调整格子位置以适应视口偏移
+            tile_x = tile.type[1].x - viewport_offset[0]
+            tile_y = tile.type[1].y - viewport_offset[1]
+            # 绘制调整后的格子
+            viewport.blit(tile.type[0], (tile_x, tile_y))
 
 
 pygame.init()
 pygame.display.set_caption("MyGame")
 tile_size = 50  # 单个格子的大小
-screen_width, screen_height = tile_size * 16, tile_size * 8
+screen_width, screen_height = tile_size * 20, tile_size * 16
 screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()  # 设置时钟
-
 
 # 加载背景图
 cloud_img = pygame.image.load("res/imgs/backgroud.png").convert_alpha()
@@ -75,28 +78,50 @@ cloud_img = pygame.transform.scale(cloud_img, (screen_width, screen_height))
 world = World()
 button = ['L', 'M', 'R']
 
+# 设置初始视口偏移量
+viewport_offset = [0, 0]
+
 run = True
+dragging = False  # 添加一个变量来表示是否正在拖动地图
 while run:
-    clock.tick(60)
-    # screen.blit(bg_img, (0, 0))
+    clock.tick(120)
     screen.blit(cloud_img, (0, 0))
-    world.draw()
+    world.draw(screen)  # 在视口上绘制地图
 
     for event in pygame.event.get():  # 循环获取事件
         if event.type == pygame.QUIT:  # 若检测到事件类型为退出，则退出系统
             run = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 3:  # 按下you键，开始拖动地图
+                dragging = True
+                start_drag_pos = pygame.mouse.get_pos()
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 3:  # 松开you键，停止拖动地图
+                dragging = False
+        elif event.type == pygame.MOUSEMOTION and dragging:  # 拖动地图
+            new_pos = pygame.mouse.get_pos()
+            dx = start_drag_pos[0] - new_pos[0]
+            dy = start_drag_pos[1] - new_pos[1]
+            start_drag_pos = new_pos
 
-        # left, middle, right = pygame.mouse.get_pressed()
-        #
-        # if left:
-        #     print("[MOUSEBUTTONDOWN]:", pygame.mouse.get_pos(), "L")
-        # if middle:
-        #     print("[MOUSEBUTTONDOWN]:", pygame.mouse.get_pos(), "M")
-        # if right:
-        #     print("[MOUSEBUTTONDOWN]:", pygame.mouse.get_pos(), "R")
-        #
-        # if event.type == pygame.MOUSEBUTTONUP:
-        #     print("[MOUSEBUTTONUP]:", event.pos, button[event.button - 1])
+            def mov(view, x, y):
+                if 0 <= view[0] + x <= 400:
+                    view[0] += x
+                elif view[0] + x < 0:
+                    view[0] = 0
+                elif view[0] + x > 400:
+                    view[0] = 400
+
+                if 0 <= view[1] + y <= 200:
+                    view[1] += y
+                elif view[1] + y < 0:
+                    view[1] = 0
+                elif view[1] + y > 200:
+                    view[1] = 200
+                return view
+
+            viewport_offset = mov(viewport_offset, dx, dy)
 
     pygame.display.update()  # 更新屏幕内容
+
 pygame.quit()
