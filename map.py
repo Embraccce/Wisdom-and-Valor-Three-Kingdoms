@@ -4,7 +4,7 @@ from init import *
 
 class GameMap:
     def __init__(self):
-        self.screen_width, self.screen_height = 800, 400  # 窗口大小
+        self.screen_width, self.screen_height = WIDTH, HEIGHT  # 窗口大小
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.clock = pygame.time.Clock()
         self.cloud_img = pygame.image.load("res/imgs/backgroud.png").convert_alpha()

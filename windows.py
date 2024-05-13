@@ -3,10 +3,11 @@ import pygame
 import sys
 import pickle
 from pygame.locals import *
-from init import*
+from init import *
 
 clock = pygame.time.Clock()
 clock.tick(FPS)
+
 
 # 按键类
 class Button(object):
@@ -32,13 +33,14 @@ class Button(object):
         screen.blit(self.surface, (self.x, self.y))
 
     # 检测是否点击到
-    def check_click(self,position):
+    def check_click(self, position):
         x_match = position[0] > self.x and position[0] < self.x + self.WIDTH
         y_match = position[1] > self.y and position[1] < self.y + self.HEIGHT
         if x_match and y_match:
             return True
         else:
             return False
+
 
 # 图鉴类
 class LibraryPage:
@@ -58,7 +60,7 @@ class LibraryPage:
 
         # 设置颜色
         self.WHITE = (255, 255, 255)
-        
+
         # 返回键
         self.return_button = Button('返回', GREY, 10, 10)
 
@@ -70,7 +72,7 @@ class LibraryPage:
         self.character_images = []
         for info in character_info:
             image = pygame.image.load(info["image"]).convert_alpha()
-            image = pygame.transform.scale(image,(self.width,self.height))
+            image = pygame.transform.scale(image, (self.width, self.height))
             self.character_images.append(image)
 
         # 设置字体
@@ -103,7 +105,6 @@ class LibraryPage:
                         library()
                         return
 
-
     # 检查图鉴位置，如果拖到最左边或最右边则停止
     def check(self):
 
@@ -118,7 +119,7 @@ class LibraryPage:
 
         # 返回键
         self.return_button.display()
-        
+
         # 画图鉴
         for i, image in enumerate(self.character_images):
             # 检查图鉴偏移量
@@ -131,16 +132,13 @@ class LibraryPage:
             # 显示人物名称
             info = self.character_info[i]
             text_name = info["name"]
-            
+
             # 创建字体对象并绘制名称
             font_name = self.font.render(text_name, True, (0, 0, 0))
             self.screen.blit(font_name, (x + 20, 50 + image.get_height() + 10))
 
         pygame.display.flip()
 
-
-
-    
     def run(self):
         clock = pygame.time.Clock()
 
@@ -148,12 +146,12 @@ class LibraryPage:
             self.handle_events()
             self.render()
             clock.tick(60)
-            
+
 
 # 关卡选择界面
 def choose_level():
     # 绘制关卡选择界面图片
-    screen.blit(bg, (0,0))
+    screen.blit(bg, (0, 0))
 
     # 绘制关卡选择界面按钮
     play_button = Button('关卡选择', RED, None, 350, centered_x=True)
@@ -189,10 +187,11 @@ def choose_level():
                     home_page()
                     return
 
+
 # 图鉴界面
 def library():
     # 绘制关卡选择界面图片
-    screen.blit(bg, (0,0))
+    screen.blit(bg, (0, 0))
 
     # 绘制图鉴界面按钮
     role_button = Button('角色图鉴', RED, None, 250, centered_x=True)
@@ -231,7 +230,7 @@ def library():
         equipment_button.display()
         return_button.display()
         pygame.display.update()
-        
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -260,7 +259,7 @@ def library():
 # 主页
 def home_page():
     # 绘制主页面背景
-    screen.blit(bg, (0,0))
+    screen.blit(bg, (0, 0))
 
     # 绘制游戏名（主界面上的）
     # game_title = font.render('GAME OF THRONE', True, WHITE)
@@ -284,17 +283,17 @@ def home_page():
             continue_button = Button('继续游戏', RED, None, 250, centered_x=True)
         else:
             continue_button = Button('继续游戏', WHITE, None, 250, centered_x=True)
-        
+
         if play_button.check_click(pygame.mouse.get_pos()):
             play_button = Button('开始游戏', RED, None, 300, centered_x=True)
         else:
             play_button = Button('开始游戏', WHITE, None, 300, centered_x=True)
-        
+
         if library_button.check_click(pygame.mouse.get_pos()):
             library_button = Button('游戏图鉴', RED, None, 350, centered_x=True)
         else:
             library_button = Button('游戏图鉴', WHITE, None, 350, centered_x=True)
-        
+
         if exit_button.check_click(pygame.mouse.get_pos()):
             exit_button = Button('保存并退出', RED, None, 400, centered_x=True)
         else:
