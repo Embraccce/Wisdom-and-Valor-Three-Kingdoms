@@ -54,6 +54,22 @@ class World(object):
                 col_count += 1
             row_count += 1
 
+    def mov(self, view, x, y):
+        if 0 <= view[0] + x <= 400:
+            view[0] += x
+        elif view[0] + x < 0:
+            view[0] = 0
+        elif view[0] + x > 400:
+            view[0] = 400
+
+        if 0 <= view[1] + y <= 200:
+            view[1] += y
+        elif view[1] + y < 0:
+            view[1] = 0
+        elif view[1] + y > 200:
+            view[1] = 200
+        return view
+
     def draw(self, viewport):
         for tile in self.tile_list:
             # 调整格子位置以适应视口偏移
@@ -66,7 +82,7 @@ class World(object):
 pygame.init()
 pygame.display.set_caption("MyGame")
 tile_size = 50  # 单个格子的大小
-screen_width, screen_height = tile_size * 20, tile_size * 16
+screen_width, screen_height = tile_size * 16, tile_size * 8
 screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()  # 设置时钟
 
@@ -104,23 +120,7 @@ while run:
             dy = start_drag_pos[1] - new_pos[1]
             start_drag_pos = new_pos
 
-            def mov(view, x, y):
-                if 0 <= view[0] + x <= 400:
-                    view[0] += x
-                elif view[0] + x < 0:
-                    view[0] = 0
-                elif view[0] + x > 400:
-                    view[0] = 400
-
-                if 0 <= view[1] + y <= 200:
-                    view[1] += y
-                elif view[1] + y < 0:
-                    view[1] = 0
-                elif view[1] + y > 200:
-                    view[1] = 200
-                return view
-
-            viewport_offset = mov(viewport_offset, dx, dy)
+            viewport_offset = world.mov(viewport_offset, dx, dy)
 
     pygame.display.update()  # 更新屏幕内容
 
