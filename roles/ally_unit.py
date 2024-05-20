@@ -1,4 +1,4 @@
-from unit import Unit
+from roles.unit import Unit
 
 
 class AllyUnit(Unit):

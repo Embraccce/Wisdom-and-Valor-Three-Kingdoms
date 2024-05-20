@@ -5,5 +5,5 @@ from windows import *
 from map import *
 
 if __name__ == '__main__': 
-    # home_page()
-    R()
+    home_page()
+    #R()
