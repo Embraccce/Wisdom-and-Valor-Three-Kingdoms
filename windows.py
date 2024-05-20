@@ -2,6 +2,7 @@
 import pygame
 import sys
 import pickle
+from map import *
 from pygame.locals import *
 from init import *
 
@@ -181,7 +182,8 @@ def choose_level():
                 raise SystemExit
             if pygame.mouse.get_pressed()[0]:
                 if play_button.check_click(pygame.mouse.get_pos()):
-                    choose_level()
+                    map = GameMap()
+                    map.run()
                     return
                 if return_button.check_click(pygame.mouse.get_pos()):
                     home_page()
