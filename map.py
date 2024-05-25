@@ -87,7 +87,7 @@ class World:
         self.races_place = np.full(self.data.shape, '', dtype=object)  # 角色在地图中的位置
         self.race = []  # 角色列表
 
-        self.r = pygame.image.load("res/imgs/d.png")
+        self.r = pygame.image.load("res/imgs/six.png")
         self.races_place[3][0] = '长身人'
         self.races_place[3][1] = '半身人'
 
