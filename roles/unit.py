@@ -29,3 +29,19 @@ class Unit:
     def cast_spell(self, spell, target):
         #单位施放魔法的方法，具体逻辑待实现
         pass
+        
+    # 计算角色移动的范围
+    def move_border(self, row, col, data):
+        selected_border_positions = []
+
+        # 遍历以选中位置为中心，上下左右 self.size 范围内的瓦片
+        for i in range(-self.move, self.move + 1):
+            for j in range(-self.move, self.move + 1):
+                if abs(i) + abs(j) <= self.move:
+                    if (0 <= col + j < data.shape[1] and
+                            0 <= row + i < data.shape[0] and
+                            data[row + i][col + j] != -1):
+                        selected_border_positions.append((row + i, col + j))
+
+        return selected_border_positions
+    

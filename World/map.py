@@ -3,7 +3,7 @@ import numpy as np
 import pygame.mouse
 
 from init import *
-from roles.ally_unit import *
+import roles.ally_unit as ally
 
 
 class GameMap:
@@ -27,7 +27,6 @@ class GameMap:
                 return False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # 左键点击
-                    # TODO:实现选中人物
                     self.world.check_click(pygame.mouse.get_pos())
                 elif event.button == 3:  # you键按下开始拖动地图
                     self.dragging = True
@@ -90,8 +89,24 @@ class World:
         self.r = pygame.image.load("res/imgs/six.png")
         self.races_place[3][0] = '长身人'
         self.races_place[3][1] = '半身人'
+        self.races_place[4][3] = ''
 
         self.selected_race = None
+
+        self.size = 5
+        self.selected_border_positions = []  # 人物的行动范围
+
+    # 返回该瓦片上的角色
+    def find_race(self, row, col):
+        for tile in self.tile_list:
+            if tile.race and row == tile.type[1].y // self.tile_size and col == tile.type[1].x // self.tile_size:
+                return tile.race
+
+    def border_positions(self, row, col):
+        if self.find_race(row, col):
+            self.selected_border_positions = self.find_race(row, col).move_border(row, col, self.data)
+        else:
+            self.selected_border_positions = []
 
     def mov(self, view, x, y):
         if 0 <= view[0] + x <= 400:
@@ -123,6 +138,19 @@ class World:
 
         return None
 
+    def add_border(self, hovered_tiles, viewport):
+        # 判读是否加边框
+        for hovered_tile in hovered_tiles:
+            if hovered_tile:
+                row, col = hovered_tile
+                rect = pygame.Rect(
+                    col * self.tile_size - self.viewport_offset[0],
+                    row * self.tile_size - self.viewport_offset[1],
+                    self.tile_size,
+                    self.tile_size
+                )
+                pygame.draw.rect(viewport, (128, 0, 0), rect, 1)
+
     # 添加单个图片
     def s_img(self, img, col_count, row_count, map_tile, race):
         img_rect = img.get_rect()
@@ -142,11 +170,13 @@ class World:
         if 0 <= col < self.data.shape[1] and 0 <= row < self.data.shape[0] and self.data[row][col] != -1:
             if self.races_place[row][col] and self.selected_race is None:  # 如果当前位置有角色
                 self.selected_race = [self.races_place[row][col], row, col]  # 记录
+                self.border_positions(row, col)
             elif self.races_place[row][col] == '' and self.selected_race is not None:  # 点击瓦片没有角色
-                self.races_place[self.selected_race[1]][self.selected_race[2]] = ''
-                self.races_place[row][col] = self.selected_race[0]
-                self.selected_race[1], self.selected_race[2] = row, col
-                self.selected_race = None
+                if (row, col) in self.selected_border_positions:  # 限制运动范围
+                    self.races_place[self.selected_race[1]][self.selected_race[2]] = ''
+                    self.races_place[row][col] = self.selected_race[0]
+                    self.selected_race[1], self.selected_race[2] = row, col
+                    self.selected_race = None
             else:
                 self.selected_race = None
                 # TODO: 选中一个又点另一个角色？
@@ -160,7 +190,7 @@ class World:
             for data_tile, map_tile in zip(row_data, row_state):
                 if self.races_place[row_count][col_count]:  # 确定绘制地点
                     # TODO: id和name的确定方式
-                    race = AllyUnit('ID', 'name', self.races_place[row_count][col_count], '骑士')
+                    race = ally.AllyUnit('ID', 'name', self.races_place[row_count][col_count], '骑士')
                 else:
                     race = None
 
@@ -185,18 +215,11 @@ class World:
                     # 绘制选中边框
                     pygame.draw.rect(viewport, (0, 255, 0), (tile_x, tile_y, self.tile_size, self.tile_size), 3)
 
-        # 鼠标所处位置
-        hovered_tile = self.border(pygame.mouse.get_pos())
-        # 判读是否加边框
-        if hovered_tile:
-            row, col = hovered_tile
-            rect = pygame.Rect(
-                col * self.tile_size - self.viewport_offset[0],
-                row * self.tile_size - self.viewport_offset[1],
-                self.tile_size,
-                self.tile_size
-            )
-            pygame.draw.rect(viewport, (255, 0, 0), rect, 2)
+        # 鼠标所处位置加边框
+        self.add_border([self.border(pygame.mouse.get_pos())], viewport)
+
+        if self.selected_race:
+            self.add_border(self.selected_border_positions, viewport)
 
     # 加载数据
     def load_data(self, filename):
@@ -206,5 +229,4 @@ class World:
 
 def R():
     GameMap().run()
-# if __name__ == "__main__":
-#     GameMap().run()
+
