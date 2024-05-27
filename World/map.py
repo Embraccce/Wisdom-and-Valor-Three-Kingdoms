@@ -22,7 +22,6 @@ class GameMap:
         self.dragging = False  # 是否在拖拽地图
         self.start_drag_pos = (0, 0)  # 拖拽位置
 
-<<<<<<< HEAD
         # 角色信息框的位置和尺寸
         # 当前角色（固定在下方的）
         self.fixed_info_rect = pygame.Rect(0, HEIGHT - 100, WIDTH, 100)
@@ -36,6 +35,20 @@ class GameMap:
             'atk': 1,
             'def': 1
         }
+        # 定义按钮
+        self.button_width = 100
+        self.button_height = 50
+        self.buttons = {
+            "move": pygame.Rect(self.screen_width - self.button_width - 10,
+                                self.screen_height - 4 * self.button_height - 20, self.button_width, self.button_height),
+            "attack": pygame.Rect(self.screen_width - self.button_width - 10, self.screen_height - 3 *
+                                  self.button_height - 15, self.button_width, self.button_height),
+            "skill": pygame.Rect(self.screen_width - self.button_width - 10,
+                                 self.screen_height - 2 * self.button_height - 10, self.button_width, self.button_height),
+            "end": pygame.Rect(self.screen_width - self.button_width - 10,
+                               self.screen_height - self.button_height - 5, self.button_width, self.button_height)
+        }  #
+
     # 固定信息框
     def draw_fixed_info(self):
         pygame.draw.rect(self.screen, WHITE, self.fixed_info_rect)
@@ -68,20 +81,7 @@ class GameMap:
                 text = font.render(line, True, BLACK)
                 self.screen.blit(text, (WIDTH - 190, 10 + i * 20))
 
-=======
-        # 定义按钮
-        self.button_width = 100
-        self.button_height = 50
-        self.buttons = {
-            "move": pygame.Rect(self.screen_width - self.button_width - 10,
-                                self.screen_height - 4 * self.button_height - 20, self.button_width, self.button_height),
-            "attack": pygame.Rect(self.screen_width - self.button_width - 10, self.screen_height - 3 *
-                                  self.button_height - 15, self.button_width, self.button_height),
-            "skill": pygame.Rect(self.screen_width - self.button_width - 10,
-                                 self.screen_height - 2 * self.button_height - 10, self.button_width, self.button_height),
-            "end": pygame.Rect(self.screen_width - self.button_width - 10,
-                               self.screen_height - self.button_height - 5, self.button_width, self.button_height)
-        }  #
+
 
         self.mouse_pressed = False  # 用于跟踪鼠标按钮的状态
 
@@ -127,7 +127,6 @@ class GameMap:
     def end_turn_action(self):
         print(self.type)
         self.type = None
->>>>>>> 2720c7ea4c356e04ceabfbbafdbad0fb9795fd11
 
     def events(self):
         for event in pygame.event.get():
@@ -170,15 +169,12 @@ class GameMap:
             self.clock.tick(60)
             self.screen.blit(self.cloud_img, (0, 0))
             self.world.draw(self.screen)
-<<<<<<< HEAD
             # 绘制固定角色信息
             self.draw_fixed_info()  
             # 绘制当前选中角色信息
             if self.world.selected_race:
                 self.draw_selected_info()  
-=======
-            self.draw_buttons()
->>>>>>> 2720c7ea4c356e04ceabfbbafdbad0fb9795fd11
+            #self.draw_buttons()
             run = self.events()
             pygame.display.update()  # 更新屏幕内容
         pygame.quit()
