@@ -101,7 +101,11 @@ class DetailPage:
         self.small_font = pygame.font.Font(font_path, 18)
 
     def render(self):
-        self.screen.fill(self.WHITE)
+        # 加载背景图
+        screen.blit(detail_bg, (0, 0))
+
+        #self.screen.fill(self.WHITE)
+        
         self.return_button.display()
         title_surface = self.font.render(self.info["name"], True, BLACK)
         self.screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 10))
@@ -345,6 +349,7 @@ class LibraryPage:
             button.display()
 
         pygame.display.flip()
+        return
 
     def run(self):
         clock = pygame.time.Clock()

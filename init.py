@@ -62,6 +62,10 @@ default = pygame.image.load("res/imgs/default.png")
 # 加载框框
 frame = pygame.image.load("res/imgs/frame.png")
 
+# 记载图鉴详情背景
+detail_bg = pygame.image.load("res/imgs/detail.png").convert()
+detail_bg = pygame.transform.scale(detail_bg,(WIDTH,HEIGHT))
+
 # 示例角色信息
 character_info = [
     {"name": "角色1", "image": "res/imgs/characters/1.png", "gender": "男", "health": 100, "magic": 80,

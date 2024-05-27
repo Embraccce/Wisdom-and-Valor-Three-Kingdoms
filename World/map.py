@@ -21,6 +21,52 @@ class GameMap:
         self.dragging = False  # 是否在拖拽地图
         self.start_drag_pos = (0, 0)  # 拖拽位置
 
+        # 角色信息框的位置和尺寸
+        # 当前角色（固定在下方的）
+        self.fixed_info_rect = pygame.Rect(0, HEIGHT - 100, WIDTH, 100)
+        # 点击到的角色
+        self.selected_info_rect = pygame.Rect(WIDTH - 200, 0, 200, 150)
+
+        # 固定显示的角色信息 TODO：（修改为实际进度条获取）
+        self.fixed_character_info = {
+            'name': '角色A',
+            'level': 'LV.99',
+            'atk': 1,
+            'def': 1
+        }
+    # 固定信息框
+    def draw_fixed_info(self):
+        pygame.draw.rect(self.screen, WHITE, self.fixed_info_rect)
+        # 字体
+        font = pygame.font.Font(font_path, 16)
+        info = [
+            "头像",  # 可以替换为角色的图标
+            f"名字: {self.fixed_character_info['name']}",
+            f"等级: {self.fixed_character_info['level']}",
+            f"ATK: {self.fixed_character_info['atk']}",
+            f"DEF: {self.fixed_character_info['def']}"
+        ]
+        for i, line in enumerate(info):
+            text = font.render(line, True, BLACK)
+            self.screen.blit(text, (10, HEIGHT - 90 + i * 20))
+    
+    # 点击显示信息框 
+    def draw_selected_info(self):
+        pygame.draw.rect(self.screen, WHITE, self.selected_info_rect)
+        # 字体
+        font = pygame.font.Font(font_path, 16)
+        if self.world.selected_race:
+            race_info = self.world.selected_race[0]  # 当前选中角色的名称
+            info = [
+                f"名字: {race_info}",
+                f"种类: 类型",  # 可替换为实际的种类信息
+                "基础信息",  # 可替换为实际的基础信息
+            ]
+            for i, line in enumerate(info):
+                text = font.render(line, True, BLACK)
+                self.screen.blit(text, (WIDTH - 190, 10 + i * 20))
+
+
     def events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -53,6 +99,11 @@ class GameMap:
             self.clock.tick(60)
             self.screen.blit(self.cloud_img, (0, 0))
             self.world.draw(self.screen)
+            # 绘制固定角色信息
+            self.draw_fixed_info()  
+            # 绘制当前选中角色信息
+            if self.world.selected_race:
+                self.draw_selected_info()  
             run = self.events()
             pygame.display.update()  # 更新屏幕内容
         pygame.quit()
