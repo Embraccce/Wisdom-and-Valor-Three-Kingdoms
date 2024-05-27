@@ -11,6 +11,7 @@ class GameMap:
         self.screen_width, self.screen_height = WIDTH, HEIGHT  # 窗口大小
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.clock = pygame.time.Clock()
+
         # 背景云层绘制
         self.cloud_img = pygame.image.load("res/imgs/backgroud.png").convert_alpha()
         self.cloud_img = pygame.transform.scale(self.cloud_img, (self.screen_width, self.screen_height))
@@ -21,6 +22,7 @@ class GameMap:
         self.dragging = False  # 是否在拖拽地图
         self.start_drag_pos = (0, 0)  # 拖拽位置
 
+<<<<<<< HEAD
         # 角色信息框的位置和尺寸
         # 当前角色（固定在下方的）
         self.fixed_info_rect = pygame.Rect(0, HEIGHT - 100, WIDTH, 100)
@@ -66,6 +68,66 @@ class GameMap:
                 text = font.render(line, True, BLACK)
                 self.screen.blit(text, (WIDTH - 190, 10 + i * 20))
 
+=======
+        # 定义按钮
+        self.button_width = 100
+        self.button_height = 50
+        self.buttons = {
+            "move": pygame.Rect(self.screen_width - self.button_width - 10,
+                                self.screen_height - 4 * self.button_height - 20, self.button_width, self.button_height),
+            "attack": pygame.Rect(self.screen_width - self.button_width - 10, self.screen_height - 3 *
+                                  self.button_height - 15, self.button_width, self.button_height),
+            "skill": pygame.Rect(self.screen_width - self.button_width - 10,
+                                 self.screen_height - 2 * self.button_height - 10, self.button_width, self.button_height),
+            "end": pygame.Rect(self.screen_width - self.button_width - 10,
+                               self.screen_height - self.button_height - 5, self.button_width, self.button_height)
+        }  #
+
+        self.mouse_pressed = False  # 用于跟踪鼠标按钮的状态
+
+        self.type = None
+
+    def draw_buttons(self):
+        for button_name, button_rect in self.buttons.items():
+            pygame.draw.rect(self.screen, (0, 128, 0), button_rect)
+            font = pygame.font.Font(None, 36)
+            text = font.render(button_name.capitalize(), True, (255, 255, 255))
+            text_rect = text.get_rect(center=button_rect.center)
+            self.screen.blit(text, text_rect)
+
+    def handle_button_click(self, pos):
+        for button_name, button_rect in self.buttons.items():
+            if button_rect.collidepoint(pos) and self.type is None:
+                # TODO:怎么进行动作
+                if button_name == "move":
+                    self.type = "move"
+                    self.move_action()
+                elif button_name == "attack":
+                    self.type = "attack"
+                    self.attack_action()
+                elif button_name == "skill":
+                    self.type = "skill"
+                    self.skill_action()
+                elif button_name == "end":
+                    self.type = "end"
+                    self.end_turn_action()
+
+    def move_action(self):
+        print(self.type)
+        self.type = None
+
+    def attack_action(self):
+        print(self.type)
+        self.type = None
+
+    def skill_action(self):
+        print(self.type)
+        self.type = None
+
+    def end_turn_action(self):
+        print(self.type)
+        self.type = None
+>>>>>>> 2720c7ea4c356e04ceabfbbafdbad0fb9795fd11
 
     def events(self):
         for event in pygame.event.get():
@@ -73,16 +135,25 @@ class GameMap:
                 return False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # 左键点击
-                    self.world.check_click(pygame.mouse.get_pos())
+                    pos = pygame.mouse.get_pos()
+                    if any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
+                        self.handle_button_click(pos)
+                        self.mouse_pressed = True
+                    else:
+                        self.world.check_click(pos)  # 点击其他
                 elif event.button == 3:  # you键按下开始拖动地图
                     self.dragging = True
                     self.start_drag_pos = pygame.mouse.get_pos()
                 elif event.button == 4:  # 滚轮缩放
-                    self.world.tile_size += 1
+                    if self.world.tile_size <= 80:
+                        self.world.tile_size += 1
                 elif event.button == 5:
-                    self.world.tile_size -= 1
+                    if self.world.tile_size > 20:
+                        self.world.tile_size -= 1
             elif event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 3:  # you键释放停止拖动地图
+                if event.button == 1:
+                    self.mouse_pressed = False  # 重置鼠标按钮状态
+                elif event.button == 3:  # you键释放停止拖动地图
                     self.dragging = False
             elif event.type == pygame.MOUSEMOTION and self.dragging:
                 new_pos = pygame.mouse.get_pos()
@@ -99,11 +170,15 @@ class GameMap:
             self.clock.tick(60)
             self.screen.blit(self.cloud_img, (0, 0))
             self.world.draw(self.screen)
+<<<<<<< HEAD
             # 绘制固定角色信息
             self.draw_fixed_info()  
             # 绘制当前选中角色信息
             if self.world.selected_race:
                 self.draw_selected_info()  
+=======
+            self.draw_buttons()
+>>>>>>> 2720c7ea4c356e04ceabfbbafdbad0fb9795fd11
             run = self.events()
             pygame.display.update()  # 更新屏幕内容
         pygame.quit()
@@ -140,12 +215,16 @@ class World:
         self.r = pygame.image.load("res/imgs/six.png")
         self.races_place[3][0] = '长身人'
         self.races_place[3][1] = '半身人'
-        self.races_place[4][3] = ''
+
+        self.races_place[4][3] = '魔族'
 
         self.selected_race = None
 
-        self.size = 5
         self.selected_border_positions = []  # 人物的行动范围
+
+    # 设置角色位置
+    def set_race(self, pos, race):
+        self.races_place[pos.x][pos.y] = race
 
     # 返回该瓦片上的角色
     def find_race(self, row, col):
@@ -159,20 +238,21 @@ class World:
         else:
             self.selected_border_positions = []
 
+    # 窗口移动范围
     def mov(self, view, x, y):
-        if 0 <= view[0] + x <= 400:
+        if -20 <= view[0] + x <= WIDTH + 20:
             view[0] += x
-        elif view[0] + x < 0:
-            view[0] = 0
-        elif view[0] + x > 400:
-            view[0] = 400
+        elif view[0] + x < -20:
+            view[0] = -20
+        elif view[0] + x > WIDTH + 20:
+            view[0] = WIDTH + 20
 
-        if 0 <= view[1] + y <= 200:
+        if -20 <= view[1] + y <= HEIGHT + 20:
             view[1] += y
-        elif view[1] + y < 0:
-            view[1] = 0
-        elif view[1] + y > 200:
-            view[1] = 200
+        elif view[1] + y < -20:
+            view[1] = -20
+        elif view[1] + y > HEIGHT + 20:
+            view[1] = HEIGHT + 20
         return view
 
     # 指针所处地图瓦片添加边框
@@ -219,7 +299,7 @@ class World:
         row = y // self.tile_size
 
         if 0 <= col < self.data.shape[1] and 0 <= row < self.data.shape[0] and self.data[row][col] != -1:
-            if self.races_place[row][col] and self.selected_race is None:  # 如果当前位置有角色
+            if self.races_place[row][col]:  # 如果当前位置有角色
                 self.selected_race = [self.races_place[row][col], row, col]  # 记录
                 self.border_positions(row, col)
             elif self.races_place[row][col] == '' and self.selected_race is not None:  # 点击瓦片没有角色
@@ -276,8 +356,4 @@ class World:
     def load_data(self, filename):
         data = np.array(pd.read_csv(filename))
         return data
-
-
-def R():
-    GameMap().run()
 
