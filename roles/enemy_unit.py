@@ -1,4 +1,6 @@
 from unit import Unit
+
+
 class EnemyUnit(Unit):
     def __init__(self, ID, name, race, unit_type):
         super().__init__(ID, name, 80, 35, 30, 2, 3, 15, 15, 30, 10, 5)  # 基础设定

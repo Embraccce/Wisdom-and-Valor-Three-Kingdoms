@@ -5,4 +5,3 @@ from windows import *
 
 if __name__ == '__main__': 
     home_page()
-    # R()
