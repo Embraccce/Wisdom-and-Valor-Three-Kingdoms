@@ -4,7 +4,7 @@ import pygame.mouse
 
 from init import *
 import roles.ally_unit as ally
-from event_manager import EventManager
+
 
 class GameMap:
     def __init__(self, event_manager):
@@ -41,7 +41,7 @@ class GameMap:
         # 定义按钮
         self.button_width = 100
         self.button_height = 50
-        self.button_radius = 25 #半径
+        self.button_radius = 40 #半径
         self.buttons = {
             "move": pygame.Rect(self.screen_width - self.button_width - 10,
                                 self.screen_height - 4 * self.button_height - 20, self.button_width, self.button_height),
@@ -74,7 +74,11 @@ class GameMap:
     
     # 点击显示信息框 
     def draw_selected_info(self):
-        pygame.draw.rect(self.screen, WHITE, self.selected_info_rect)
+        # 创建一个 Surface 对象作为信息框背景
+        info_bg = pygame.Surface((200, 100), pygame.SRCALPHA)
+        info_bg.fill((128, 128, 128, 128))  # 半透明灰色背景
+        self.screen.blit(info_bg, (WIDTH - 200, 0))  # 将半透明背景绘制到屏幕上
+        
         # 字体
         font = pygame.font.Font(font_path, 16)
         if self.world.selected_race:
@@ -93,12 +97,23 @@ class GameMap:
         self.type = None
 
     def draw_buttons(self):
-        for button_name, button_rect in self.buttons.items():
-            pygame.draw.circle(self.screen, (0, 128, 0), button_rect.center, self.button_radius)
-            font = pygame.font.Font(None, 24)
+        for i, (button_name, button_rect) in enumerate(self.buttons.items()):
+            # 按钮之间的间距
+            margin = 50 
+
+            # 计算每个按钮的位置
+            button_x = WIDTH - (len(self.buttons) - i) * (2 * self.button_radius + margin)
+            button_y = HEIGHT - self.button_radius - 10
+            
+            # 绘制灰色圆形背景
+            pygame.draw.circle(self.screen, (128, 128, 128, 128), (button_x, button_y), self.button_radius)
+
+            # 绘制按钮文字
+            font = pygame.font.Font(font_path, 24)
             text = font.render(button_name.capitalize(), True, BLACK)
-            text_rect = text.get_rect(center=button_rect.center)
+            text_rect = text.get_rect(center=(button_x, button_y))
             self.screen.blit(text, text_rect)
+
 
     def handle_button_click(self, pos):
         for button_name, button_rect in self.buttons.items():
