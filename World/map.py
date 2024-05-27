@@ -4,10 +4,13 @@ import pygame.mouse
 
 from init import *
 import roles.ally_unit as ally
-
+from event_manager import EventManager
 
 class GameMap:
-    def __init__(self):
+    def __init__(self, event_manager):
+        # 事件管理器
+        self.event_manager = event_manager
+
         self.screen_width, self.screen_height = WIDTH, HEIGHT  # 窗口大小
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.clock = pygame.time.Clock()
@@ -38,6 +41,7 @@ class GameMap:
         # 定义按钮
         self.button_width = 100
         self.button_height = 50
+        self.button_radius = 25 #半径
         self.buttons = {
             "move": pygame.Rect(self.screen_width - self.button_width - 10,
                                 self.screen_height - 4 * self.button_height - 20, self.button_width, self.button_height),
@@ -64,6 +68,9 @@ class GameMap:
         for i, line in enumerate(info):
             text = font.render(line, True, BLACK)
             self.screen.blit(text, (10, HEIGHT - 90 + i * 20))
+
+        #绘制按钮
+        self.draw_buttons()
     
     # 点击显示信息框 
     def draw_selected_info(self):
@@ -81,17 +88,15 @@ class GameMap:
                 text = font.render(line, True, BLACK)
                 self.screen.blit(text, (WIDTH - 190, 10 + i * 20))
 
-
-
         self.mouse_pressed = False  # 用于跟踪鼠标按钮的状态
 
         self.type = None
 
     def draw_buttons(self):
         for button_name, button_rect in self.buttons.items():
-            pygame.draw.rect(self.screen, (0, 128, 0), button_rect)
-            font = pygame.font.Font(None, 36)
-            text = font.render(button_name.capitalize(), True, (255, 255, 255))
+            pygame.draw.circle(self.screen, (0, 128, 0), button_rect.center, self.button_radius)
+            font = pygame.font.Font(None, 24)
+            text = font.render(button_name.capitalize(), True, BLACK)
             text_rect = text.get_rect(center=button_rect.center)
             self.screen.blit(text, text_rect)
 
@@ -132,6 +137,12 @@ class GameMap:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
+            # esc菜单
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    print("escesc")
+                    self.event_manager.post("show_main_page")
+                    #return
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # 左键点击
                     pos = pygame.mouse.get_pos()
@@ -140,7 +151,7 @@ class GameMap:
                         self.mouse_pressed = True
                     else:
                         self.world.check_click(pos)  # 点击其他
-                elif event.button == 3:  # you键按下开始拖动地图
+                elif event.button == 3:  # 右键按下开始拖动地图
                     self.dragging = True
                     self.start_drag_pos = pygame.mouse.get_pos()
                 elif event.button == 4:  # 滚轮缩放
@@ -152,7 +163,7 @@ class GameMap:
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.mouse_pressed = False  # 重置鼠标按钮状态
-                elif event.button == 3:  # you键释放停止拖动地图
+                elif event.button == 3:  # 右键释放停止拖动地图
                     self.dragging = False
             elif event.type == pygame.MOUSEMOTION and self.dragging:
                 new_pos = pygame.mouse.get_pos()

@@ -39,7 +39,7 @@ class Button(object):
         return x_match and y_match
 
 # 关卡选择界面
-def choose_level():
+def choose_level(event_manager):
     # 绘制关卡选择界面图片
     screen.blit(bg, (0, 0))
 
@@ -71,11 +71,11 @@ def choose_level():
                 raise SystemExit
             if pygame.mouse.get_pressed()[0]:
                 if play_button.check_click(pygame.mouse.get_pos()):
-                    map = GameMap()
+                    map = GameMap(event_manager)
                     map.run()
                     return
                 if return_button.check_click(pygame.mouse.get_pos()):
-                    home_page()
+                    event_manager.post("show_main_page")
                     return
 
 # 图鉴详情
@@ -105,7 +105,7 @@ class DetailPage:
         screen.blit(detail_bg, (0, 0))
 
         #self.screen.fill(self.WHITE)
-        
+
         self.return_button.display()
         title_surface = self.font.render(self.info["name"], True, BLACK)
         self.screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 10))
@@ -428,7 +428,7 @@ def library():
                     return
 
 # 主页
-def home_page():
+def home_page(event_manager):
     # 绘制主页面背景
     screen.blit(bg, (0, 0))
 
@@ -446,6 +446,18 @@ def home_page():
     play_button.display()
     library_button.display()
     exit_button.display()
+
+########## 事件管理器 ##############
+    running = True
+
+    def show_home_page():
+        nonlocal running
+        running = False
+        # print("Home page shown")
+        home_page(event_manager)
+
+    event_manager.subscribe("show_main_page", show_home_page)
+############################### 
 
     while True:
         if game_level == 0:
@@ -482,10 +494,10 @@ def home_page():
                 raise SystemExit
             if pygame.mouse.get_pressed()[0]:
                 if game_level > 0 and continue_button.check_click(pygame.mouse.get_pos()):
-                    choose_level()
+                    choose_level(event_manager)
                     return
                 if play_button.check_click(pygame.mouse.get_pos()):
-                    choose_level()
+                    choose_level(event_manager)
                     return
                 if library_button.check_click(pygame.mouse.get_pos()):
                     library = LibraryPage(character_info)
