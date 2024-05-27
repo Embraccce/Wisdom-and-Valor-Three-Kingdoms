@@ -157,7 +157,6 @@ class World:
         self.race = []  # 角色列表
 
         self.r = pygame.image.load("res/imgs/six.png")
-
         self.races_place[3][0] = '长身人'
         self.races_place[3][1] = '半身人'
 
