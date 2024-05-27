@@ -53,6 +53,30 @@ class GameMap:
                                self.screen_height - self.button_height - 5, self.button_width, self.button_height)
         }  #
 
+    def save_state(self, filename="save/game_state.pkl"):
+        # 确保保存目录存在
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        state = {
+            "races_place": self.world.races_place,
+            "tile_size": self.world.tile_size,
+            "viewport_offset": self.world.viewport_offset,
+        }
+        with open(filename, "wb") as f:
+            pickle.dump(state, f)
+        print(f"Game state saved to {filename}")
+
+    # 从文件加载状态
+    def load_state(self, filename="save/game_state.pkl"):
+        if os.path.exists(filename):
+            with open(filename, "rb") as f:
+                state = pickle.load(f)
+            self.world.races_place = np.array(state["races_place"])
+            self.world.tile_size = state["tile_size"]
+            self.world.viewport_offset = state["viewport_offset"]
+            print(f"Game state loaded from {filename}")
+        else:
+            print(f"No save file found at {filename}")
+
     # 固定信息框
     def draw_fixed_info(self):
         pygame.draw.rect(self.screen, WHITE, self.fixed_info_rect)
@@ -156,6 +180,7 @@ class GameMap:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     print("escesc")
+                    self.save_state()
                     self.event_manager.post("show_main_page", self.event_manager)
                     #return
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -190,6 +215,7 @@ class GameMap:
         return True
 
     def run(self):
+        self.load_state()
         run = True
         while run:
             self.clock.tick(60)
