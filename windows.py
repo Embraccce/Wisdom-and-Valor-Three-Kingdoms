@@ -75,12 +75,13 @@ def choose_level(event_manager):
                     map.run()
                     return
                 if return_button.check_click(pygame.mouse.get_pos()):
-                    event_manager.post("show_main_page")
+                    event_manager.post("show_main_page", event_manager)
                     return
 
 # 图鉴详情
 class DetailPage:
-    def __init__(self, type, id):
+    def __init__(self, type, id, event_manager):
+        self.event_manager = event_manager
         self.window_width = WIDTH
         self.window_height = HEIGHT
         self.window_size = (WIDTH, HEIGHT)
@@ -158,7 +159,7 @@ class DetailPage:
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and self.return_button.check_click(event.pos):
-                    library_page = LibraryPage(self.character_info, self.type)
+                    library_page = LibraryPage(self.character_info, self.event_manager,self.type)
                     library_page.run()
 
     def run(self):
@@ -224,7 +225,8 @@ class LibraryButton:
 
 # 图鉴类
 class LibraryPage:
-    def __init__(self, character_info, type=1):
+    def __init__(self, character_info,  event_manager, type=1):
+        self.event_manager = event_manager
         self.window_width = WIDTH
         self.window_height = HEIGHT
         self.window_size = (WIDTH, HEIGHT)
@@ -283,7 +285,7 @@ class LibraryPage:
                 button = LibraryButton('', PINK, 0, 0, self.width, self.height)
             self.buttons.append(button)
 
-    def handle_events(self):
+    def handle_events(self, event_manager):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -296,7 +298,7 @@ class LibraryPage:
                     self.current_x += 10
                 if event.button == 1:
                     if self.return_button.check_click(event.pos):
-                        home_page()
+                        home_page(event_manager)
                         return
                     # 如果点击到切换图鉴
                     for i, button in enumerate(self.category_buttons):
@@ -317,7 +319,7 @@ class LibraryPage:
                             # 这里用text是否等于???来判定是否为空图鉴
                             if button.check_click(event.pos) and button.text:
                                 # 进入详情页
-                                detail_page = DetailPage(self.type, i)
+                                detail_page = DetailPage(self.type, i, event_manager)
                                 detail_page.run()
                                 #self.show_details(button.text)
                                 return
@@ -355,13 +357,13 @@ class LibraryPage:
         clock = pygame.time.Clock()
 
         while True:
-            self.handle_events()
+            self.handle_events(self.event_manager)
             self.render()
             clock.tick(60)
 
 # 废案：
 # 图鉴选择界面（）
-def library():
+def library(event_manager):
     # 绘制关卡选择界面图片
     screen.blit(bg, (0, 0))
 
@@ -410,21 +412,21 @@ def library():
             if pygame.mouse.get_pressed()[0]:
                 # 如果点击人物图鉴
                 if role_button.check_click(pygame.mouse.get_pos()):
-                    role_page = LibraryPage(role_info)
+                    role_page = LibraryPage(character_info, event_manager)
                     role_page.run()
                     return
                 if enemy_button.check_click(pygame.mouse.get_pos()):
-                    enemy_page = LibraryPage(role_info)
+                    enemy_page = LibraryPage(character_info, event_manager)
                     enemy_page.run()
                     choose_level()
                     return
                 if equipment_button.check_click(pygame.mouse.get_pos()):
-                    equipment_page = LibraryPage(role_info)
+                    equipment_page = LibraryPage(character_info, event_manager)
                     equipment_page.run()
                     choose_level()
                     return
                 if return_button.check_click(pygame.mouse.get_pos()):
-                    home_page()
+                    home_page(event_manager)
                     return
 
 # 主页
@@ -450,7 +452,7 @@ def home_page(event_manager):
 ########## 事件管理器 ##############
     running = True
 
-    def show_home_page():
+    def show_home_page(event_manager):
         nonlocal running
         running = False
         # print("Home page shown")
@@ -500,7 +502,7 @@ def home_page(event_manager):
                     choose_level(event_manager)
                     return
                 if library_button.check_click(pygame.mouse.get_pos()):
-                    library = LibraryPage(character_info)
+                    library = LibraryPage(character_info, event_manager)
                     library.run()
                     return
                 if exit_button.check_click(pygame.mouse.get_pos()):

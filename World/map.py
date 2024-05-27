@@ -156,7 +156,7 @@ class GameMap:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     print("escesc")
-                    self.event_manager.post("show_main_page")
+                    self.event_manager.post("show_main_page", self.event_manager)
                     #return
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # 左键点击
