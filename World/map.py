@@ -158,10 +158,11 @@ class GameMap:
             # esc菜单
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    print("escesc")
+                    if self.state == 'chose':
+                        return False
+                    else:
+                        self.event_manager.post("show_main_page", self.event_manager)
                     # self.save_state()
-                    self.event_manager.post("show_main_page", self.event_manager)
-                    #return
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # 左键点击
                     pos = pygame.mouse.get_pos()
@@ -250,10 +251,6 @@ class World:
         self.selected_race = None
 
         self.selected_border_positions = []  # 人物的行动范围
-
-    # 设置角色位置
-    def set_race(self, pos, race):
-        self.races_place[pos.x][pos.y] = race
 
     # 返回该瓦片上的角色
     def find_race(self, row, col):
@@ -369,6 +366,7 @@ class World:
             tile_y = tile.type[1].y - self.viewport_offset[1]
             viewport.blit(tile.type[0], (tile_x, tile_y))
             if tile.race:
+                # TODO:使用角色自身的图片
                 img = pygame.transform.scale(self.r, (self.tile_size, self.tile_size))
                 viewport.blit(img, (tile_x, tile_y))
                 if self.selected_race is not None and tile.race.race == self.selected_race[0]:
