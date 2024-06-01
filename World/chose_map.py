@@ -3,7 +3,6 @@ import pygame.mouse
 from init import *
 from World.Lattice import *
 from World.load_data import *
-import roles.ally_unit as ally
 
 
 class Chose:
@@ -28,7 +27,10 @@ class Chose:
             pygame.transform.scale(pygame.image.load('res/imgs/characters/2.png'), (self.tile_size, self.tile_size)),
             pygame.transform.scale(pygame.image.load('res/imgs/characters/3.png'), (self.tile_size, self.tile_size))
         ]
-        self.selected_avatar = None
+        self.selected_avatar = None  # 选择的角色
+
+        self.avatar_background_img = pygame.transform.scale(pygame.image.load("res/imgs/detail.png"),
+                                                            (WIDTH, self.tile_size + 20))
 
         # 角色头像框矩形
         self.avatar_rects = []
@@ -42,11 +44,15 @@ class Chose:
 
     # 选择的角色头像上
     def draw_avatars(self, viewport):
+        # 绘制选角背景图
+        viewport.blit(self.avatar_background_img, (0, HEIGHT - self.tile_size - 20))
+
         for i, avatar in enumerate(self.avatars):
             viewport.blit(avatar, self.avatar_rects[i].topleft)
             if self.selected_avatar == i:
                 pygame.draw.rect(viewport, (0, 255, 0), self.avatar_rects[i], 1)
 
+    # 点击的角色序号
     def handle_avatar_click(self, pos):
         for i, rect in enumerate(self.avatar_rects):
             if rect.collidepoint(pos):
@@ -61,8 +67,10 @@ class Chose:
                 self.races_place[row][col] = self.race_name[self.selected_avatar]
                 self.map_state[row][col] = self.selected_avatar
                 self.selected_avatar = None
+            elif self.selected_avatar is None and self.races_place[row][col]:
+                self.races_place[row][col] = ''
 
-        # 添加单个图片
+    # 添加单个图片
     def s_img(self, img, col_count, row_count, map_tile, race):
         img_rect = img.get_rect()
         img_rect.x = col_count * self.tile_size
@@ -70,8 +78,7 @@ class Chose:
         img_tile = (img, img_rect)
         self.tile_list.append(Lattice(img_tile, map_tile, 0, None, race))
 
-        # 指针所处地图瓦片添加边框
-
+    # 指针所处地图瓦片添加边框
     def border(self, pos):
         x, y = pos
         col = x // self.tile_size
@@ -132,5 +139,3 @@ class Chose:
         self.draw_avatars(viewport)
 
         return self.races_place
-
-

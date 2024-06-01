@@ -214,7 +214,7 @@ class GameMap:
         # self.load_state()
         run = True
         while run:
-            self.clock.tick(60)
+            self.clock.tick(10)
             self.screen.blit(self.cloud_img, (0, 0))
             self.world.draw(self.screen)
             # 绘制固定角色信息
@@ -245,8 +245,6 @@ class World:
         # 地图瓦片上的角色
         self.races_place = np.full(self.data.shape, '', dtype=object)  # 角色在地图中的位置
         self.race = []  # 角色列表
-
-        self.r = pygame.image.load("res/imgs/six.png")
 
         self.selected_race = None
 
@@ -367,11 +365,14 @@ class World:
             viewport.blit(tile.type[0], (tile_x, tile_y))
             if tile.race:
                 # TODO:使用角色自身的图片
-                img = pygame.transform.scale(self.r, (self.tile_size, self.tile_size))
+                img = pygame.transform.scale(pygame.image.load(self.find_race(tile_y // self.tile_size,
+                                                                              tile_x // self.tile_size).img),
+                                             (self.tile_size, self.tile_size))
                 viewport.blit(img, (tile_x, tile_y))
-                if self.selected_race is not None and tile.race.race == self.selected_race[0]:
+                if self.selected_race is not None and [tile.race.race, tile_y // self.tile_size,
+                                                       tile_x // self.tile_size] == self.selected_race:
                     # 绘制选中边框
-                    pygame.draw.rect(viewport, (0, 255, 0), (tile_x, tile_y, self.tile_size, self.tile_size), 3)
+                    pygame.draw.rect(viewport, (0, 255, 0), (tile_x, tile_y, self.tile_size, self.tile_size), 2)
 
         # 鼠标所处位置加边框
         self.add_border([self.border(pygame.mouse.get_pos())], viewport)
