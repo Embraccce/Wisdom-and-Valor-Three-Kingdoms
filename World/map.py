@@ -1,8 +1,6 @@
-import pandas as pd
-import numpy as np
 import pygame.mouse
 
-from init import *
+from World.chose_map import *
 import roles.ally_unit as ally
 
 
@@ -21,8 +19,10 @@ class GameMap:
 
         # 创建世界
         self.world = World()
+        self.chose = Chose()
 
         self.dragging = False  # 是否在拖拽地图
+        self.state = None
         self.start_drag_pos = (0, 0)  # 拖拽位置
 
         # 角色信息框的位置和尺寸
@@ -41,7 +41,7 @@ class GameMap:
         # 定义按钮
         self.button_width = 100
         self.button_height = 50
-        self.button_radius = 40 #半径
+        self.button_radius = 40  # 半径
         self.buttons = {
             "move": pygame.Rect(self.screen_width - self.button_width - 10,
                                 self.screen_height - 4 * self.button_height - 20, self.button_width, self.button_height),
@@ -138,39 +138,18 @@ class GameMap:
             text_rect = text.get_rect(center=(button_x, button_y))
             self.screen.blit(text, text_rect)
 
-
     def handle_button_click(self, pos):
         for button_name, button_rect in self.buttons.items():
             if button_rect.collidepoint(pos) and self.type is None:
                 # TODO:怎么进行动作
                 if button_name == "move":
-                    self.type = "move"
-                    self.move_action()
+                    print("move")
                 elif button_name == "attack":
-                    self.type = "attack"
-                    self.attack_action()
+                    print("attack")
                 elif button_name == "skill":
-                    self.type = "skill"
-                    self.skill_action()
+                    print("skill")
                 elif button_name == "end":
-                    self.type = "end"
-                    self.end_turn_action()
-
-    def move_action(self):
-        print(self.type)
-        self.type = None
-
-    def attack_action(self):
-        print(self.type)
-        self.type = None
-
-    def skill_action(self):
-        print(self.type)
-        self.type = None
-
-    def end_turn_action(self):
-        print(self.type)
-        self.type = None
+                    print("end")
 
     def events(self):
         for event in pygame.event.get():
@@ -180,17 +159,23 @@ class GameMap:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     print("escesc")
-                    self.save_state()
+                    # self.save_state()
                     self.event_manager.post("show_main_page", self.event_manager)
                     #return
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # 左键点击
                     pos = pygame.mouse.get_pos()
-                    if any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
-                        self.handle_button_click(pos)
-                        self.mouse_pressed = True
+                    if self.state == 'chose':
+                        if any(rect.collidepoint(pos) for rect in self.chose.avatar_rects):
+                            self.chose.handle_avatar_click(pos)
+                        else:
+                            self.chose.handle_map_click(pos)
                     else:
-                        self.world.check_click(pos)  # 点击其他
+                        if any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
+                            self.handle_button_click(pos)
+                            self.mouse_pressed = True
+                        else:
+                            self.world.check_click(pos)  # 点击其他
                 elif event.button == 3:  # 右键按下开始拖动地图
                     self.dragging = True
                     self.start_drag_pos = pygame.mouse.get_pos()
@@ -215,7 +200,17 @@ class GameMap:
         return True
 
     def run(self):
-        self.load_state()
+        self.state = 'chose'
+        run = True
+        while run:
+            self.clock.tick(60)
+            self.screen.blit(self.cloud_img, (0, 0))
+            self.world.races_place = self.chose.chose_draw(self.screen)
+            run = self.events()
+            pygame.display.update()  # 更新屏幕内容
+        self.state = None
+
+        # self.load_state()
         run = True
         while run:
             self.clock.tick(60)
@@ -226,27 +221,17 @@ class GameMap:
             # 绘制当前选中角色信息
             if self.world.selected_race:
                 self.draw_selected_info()  
-            #self.draw_buttons()
+            # self.draw_buttons()
             run = self.events()
             pygame.display.update()  # 更新屏幕内容
         pygame.quit()
 
 
-# 地图瓦片信息
-class Lattice:
-    def __init__(self, type, state, height, terrain, race):
-        self.type = type  # 瓦片类型
-        self.state = state  # 瓦片状态
-        self.height = height  # 高度
-        self.terrain = terrain  # 忘记是啥了
-        self.race = race  # 该瓦片上有无角色
-
-
 class World:
     def __init__(self):
         # 地图数据
-        self.data = self.load_data("res/files/map.csv")
-        self.map_state = self.load_data("res/files/map_state")
+        self.data = load_data("res/files/map.csv")
+        self.map_state = load_data("res/files/map_state")
         self.dirt_img = pygame.image.load('res/imgs/d.png')
         self.grass_img = pygame.image.load('res/imgs/g.png')
 
@@ -261,10 +246,6 @@ class World:
         self.race = []  # 角色列表
 
         self.r = pygame.image.load("res/imgs/six.png")
-        self.races_place[3][0] = '长身人'
-        self.races_place[3][1] = '半身人'
-
-        self.races_place[4][3] = '魔族'
 
         self.selected_race = None
 
@@ -399,9 +380,4 @@ class World:
 
         if self.selected_race:
             self.add_border(self.selected_border_positions, viewport)
-
-    # 加载数据
-    def load_data(self, filename):
-        data = np.array(pd.read_csv(filename))
-        return data
 
