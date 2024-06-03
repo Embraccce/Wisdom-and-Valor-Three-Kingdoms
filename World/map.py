@@ -1,8 +1,8 @@
 import pygame.mouse
-
+import json
 from World.chose_map import *
 import roles.ally_unit as ally
-
+import roles.enemy_unit as enemy
 
 class GameMap:
     def __init__(self, event_manager):
@@ -201,28 +201,28 @@ class GameMap:
         return True
 
     def run(self):
-        self.state = 'chose'
-        run = True
-        while run:
-            self.clock.tick(60)
-            self.screen.blit(self.cloud_img, (0, 0))
-            self.world.races_place = self.chose.chose_draw(self.screen)
-            run = self.events()
-            pygame.display.update()  # 更新屏幕内容
-        self.state = None
+        # self.state = 'chose'
+        # run = True
+        # while run:
+        #     self.clock.tick(10)
+        #     self.screen.blit(self.cloud_img, (0, 0))
+        #     self.world.races_place = self.chose.chose_draw(self.screen)
+        #     run = self.events()
+        #     pygame.display.update()  # 更新屏幕内容
+        # self.state = None
 
         # self.load_state()
         run = True
         while run:
-            self.clock.tick(10)
+            self.clock.tick(60)
             self.screen.blit(self.cloud_img, (0, 0))
             self.world.draw(self.screen)
             # 绘制固定角色信息
             self.draw_fixed_info()  
             # 绘制当前选中角色信息
             if self.world.selected_race:
-                self.draw_selected_info()  
-            # self.draw_buttons()
+                self.draw_selected_info()
+
             run = self.events()
             pygame.display.update()  # 更新屏幕内容
         pygame.quit()
@@ -231,10 +231,12 @@ class GameMap:
 class World:
     def __init__(self):
         # 地图数据
-        self.data = load_data("res/files/map.csv")
-        self.map_state = load_data("res/files/map_state")
+        self.data = load_map_data()
+        self.map_state = load_map_data()
+
         self.dirt_img = pygame.image.load('res/imgs/d.png')
         self.grass_img = pygame.image.load('res/imgs/g.png')
+        self.detail_img = pygame.image.load("res/imgs/detail.png")
 
         # 瓦片大小
         self.tile_size = 50
@@ -243,7 +245,7 @@ class World:
         # 瓦片列表
         self.tile_list = []
         # 地图瓦片上的角色
-        self.races_place = np.full(self.data.shape, '', dtype=object)  # 角色在地图中的位置
+        self.races_place, self.enemy_place = load_role_place(self.data.shape)
         self.race = []  # 角色列表
 
         self.selected_race = None
@@ -253,8 +255,11 @@ class World:
     # 返回该瓦片上的角色
     def find_race(self, row, col):
         for tile in self.tile_list:
-            if tile.race and row == tile.type[1].y // self.tile_size and col == tile.type[1].x // self.tile_size:
+            if (tile.race is not None and row == ((tile.type[1].y - self.viewport_offset[1]) // self.tile_size) and
+                    col == ((tile.type[1].x - self.viewport_offset[0]) // self.tile_size)):
                 return tile.race
+
+        return None
 
     def border_positions(self, row, col):
         if self.find_race(row, col):
@@ -323,14 +328,22 @@ class World:
         row = y // self.tile_size
 
         if 0 <= col < self.data.shape[1] and 0 <= row < self.data.shape[0] and self.data[row][col] != -1:
-            if self.races_place[row][col]:  # 如果当前位置有角色
-                self.selected_race = [self.races_place[row][col], row, col]  # 记录
+            if self.find_race(row, col):  # 如果当前位置有角色
+                race = self.find_race(row, col)
+                if race.ID == 'ally':
+                    self.selected_race = [self.races_place[row][col], row, col, race.ID]  # 记录
+                else:
+                    self.selected_race = [self.enemy_place[row][col], row, col, race.ID]
                 self.border_positions(row, col)
-            elif self.races_place[row][col] == '' and self.selected_race is not None:  # 点击瓦片没有角色
-                if (row, col) in self.selected_border_positions:  # 限制运动范围
-                    self.races_place[self.selected_race[1]][self.selected_race[2]] = ''
-                    self.races_place[row][col] = self.selected_race[0]
-                    self.selected_race[1], self.selected_race[2] = row, col
+            elif (self.races_place[row][col] == '' and self.selected_race is not None
+                  and self.enemy_place[row][col] == ''):  # 点击瓦片没有角色
+                if self.selected_race[3] == 'ally':
+                    if (row, col) in self.selected_border_positions:  # 限制运动范围
+                        self.races_place[self.selected_race[1]][self.selected_race[2]] = ''
+                        self.races_place[row][col] = self.selected_race[0]
+                        self.selected_race[1], self.selected_race[2] = row, col
+                        self.selected_race = None
+                else:
                     self.selected_race = None
             else:
                 self.selected_race = None
@@ -345,15 +358,20 @@ class World:
             for data_tile, map_tile in zip(row_data, row_state):
                 if self.races_place[row_count][col_count]:  # 确定绘制地点
                     # TODO: id和name的确定方式
-                    race = ally.AllyUnit('ID', 'name', self.races_place[row_count][col_count], '骑士')
+                    race = ally.AllyUnit('ally', 'name', self.races_place[row_count][col_count], '骑士')
+                elif self.enemy_place[row_count][col_count]:
+                    race = enemy.EnemyUnit('enemy', 'name', self.enemy_place[row_count][col_count])
                 else:
                     race = None
 
-                if data_tile == 0:
+                if data_tile == 1:
                     img = pygame.transform.scale(self.grass_img, (self.tile_size, self.tile_size))
                     self.s_img(img, col_count, row_count, map_tile, race)
-                elif data_tile == 1:
+                elif data_tile == 2:
                     img = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
+                    self.s_img(img, col_count, row_count, map_tile, race)
+                elif data_tile == 3:
+                    img = pygame.transform.scale(self.detail_img, (self.tile_size, self.tile_size))
                     self.s_img(img, col_count, row_count, map_tile, race)
 
                 col_count += 1
@@ -362,21 +380,22 @@ class World:
         for tile in self.tile_list:
             tile_x = tile.type[1].x - self.viewport_offset[0]
             tile_y = tile.type[1].y - self.viewport_offset[1]
-            viewport.blit(tile.type[0], (tile_x, tile_y))
+
             if tile.race:
                 # TODO:使用角色自身的图片
-                img = pygame.transform.scale(pygame.image.load(self.find_race(tile_y // self.tile_size,
-                                                                              tile_x // self.tile_size).img),
-                                             (self.tile_size, self.tile_size))
+                race = self.find_race(tile_y // self.tile_size, tile_x // self.tile_size)
+                img = pygame.transform.scale(pygame.image.load(race.img), (self.tile_size, self.tile_size))
                 viewport.blit(img, (tile_x, tile_y))
                 if self.selected_race is not None and [tile.race.race, tile_y // self.tile_size,
                                                        tile_x // self.tile_size] == self.selected_race:
                     # 绘制选中边框
                     pygame.draw.rect(viewport, (0, 255, 0), (tile_x, tile_y, self.tile_size, self.tile_size), 2)
+            else:
+                viewport.blit(tile.type[0], (tile_x, tile_y))
 
         # 鼠标所处位置加边框
         self.add_border([self.border(pygame.mouse.get_pos())], viewport)
 
-        if self.selected_race:
+        if self.selected_race and self.selected_race[3] == 'ally':
             self.add_border(self.selected_border_positions, viewport)
 

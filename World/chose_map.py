@@ -1,5 +1,5 @@
 import pygame.mouse
-
+import json
 from init import *
 from World.Lattice import *
 from World.load_data import *
@@ -11,10 +11,11 @@ class Chose:
         self.tile_size = 50
         self.chosen_tile = None
         # 地图数据
-        self.data = load_data("res/files/map.csv")
-        self.map_state = load_data("res/files/map_state")
+        self.data = load_map_data()
+        self.map_state = load_map_data()
         self.dirt_img = pygame.image.load('res/imgs/d.png')
         self.grass_img = pygame.image.load('res/imgs/g.png')
+        self.detail_img = pygame.image.load("res/imgs/detail.png")
 
         self.races_place = np.full(self.data.shape, '', dtype=object)  # 角色在地图中的位置
 
@@ -113,11 +114,14 @@ class Chose:
                 if self.races_place[row_count][col_count]:
                     img = pygame.transform.scale(self.avatars[map_tile], (self.tile_size, self.tile_size))
                     self.s_img(img, col_count, row_count, map_tile, None)
-                elif data_tile == 0:
+                elif data_tile == 1:
                     img = pygame.transform.scale(self.grass_img, (self.tile_size, self.tile_size))
                     self.s_img(img, col_count, row_count, map_tile, None)
-                elif data_tile == 1:
+                elif data_tile == 2:
                     img = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
+                    self.s_img(img, col_count, row_count, map_tile, None)
+                elif data_tile == 3:
+                    img = pygame.transform.scale(self.detail_img, (self.tile_size, self.tile_size))
                     self.s_img(img, col_count, row_count, map_tile, None)
 
                 col_count += 1
