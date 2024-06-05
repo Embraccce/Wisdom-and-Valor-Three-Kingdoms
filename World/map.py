@@ -31,13 +31,6 @@ class GameMap:
         # 点击到的角色
         self.selected_info_rect = pygame.Rect(WIDTH - 200, 0, 200, 150)
 
-        # 固定显示的角色信息 TODO：（修改为实际进度条获取）
-        self.fixed_character_info = {
-            'name': '角色A',
-            'level': 'LV.99',
-            'atk': 1,
-            'def': 1
-        }
         # 定义按钮
         self.button_width = 100
         self.button_height = 50
@@ -80,20 +73,41 @@ class GameMap:
     # 固定信息框
     def draw_fixed_info(self):
         pygame.draw.rect(self.screen, WHITE, self.fixed_info_rect)
+        
         # 字体
         font = pygame.font.Font(font_path, 16)
+        
+        # 获取当前固定显示的角色信息
+        fixed_character_info = self.world.Action[0]
+        
+        # 加载头像
+        avatar_path = "res/imgs/characters/1.png"  # 头像路径，可以根据实际情况动态获取
+        avatar_img = pygame.image.load(avatar_path).convert_alpha()
+        avatar_img = pygame.transform.scale(avatar_img, (50, 50))  # 调整头像大小
+        
+        # 绘制头像
+        self.screen.blit(avatar_img, (10, HEIGHT - 90))
+        
+        # 角色其他信息
         info = [
-            "头像",  # 可以替换为角色的图标
-            f"名字: {self.fixed_character_info['name']}",
-            f"等级: {self.fixed_character_info['level']}",
-            f"ATK: {self.fixed_character_info['atk']}",
-            f"DEF: {self.fixed_character_info['def']}"
+            f"名字: {fixed_character_info.name}",
+            f"种族: {fixed_character_info.race}",
+            f"物理攻击: {fixed_character_info.attack_power}",
+            f"物理防御: {fixed_character_info.physical_def}",
+            f"魔法攻击: {fixed_character_info.magic_power}",
+            f"魔法防御: {fixed_character_info.magic_def}"
         ]
+        
+        # 绘制角色信息（每列两个信息）
         for i, line in enumerate(info):
             text = font.render(line, True, BLACK)
-            self.screen.blit(text, (10, HEIGHT - 90 + i * 20))
+            col = i % 2  # 列数
+            row = i // 2  # 行数
+            x_pos = 70 + col * 200  # 每列宽度为200
+            y_pos = HEIGHT - 90 + row * 20
+            self.screen.blit(text, (x_pos, y_pos))
 
-        #绘制按钮
+        # 绘制按钮
         self.draw_buttons()
     
     # 点击显示信息框 
@@ -105,6 +119,7 @@ class GameMap:
         
         # 字体
         font = pygame.font.Font(font_path, 16)
+
         if self.world.selected_race:
             race_info = self.world.selected_race[0]  # 当前选中角色的名称
             info = [
@@ -200,6 +215,11 @@ class GameMap:
 
         return True
 
+    # 按照进度条行动
+    def action(self):
+        # TODO: 进度条
+    
+        return
     def run(self):
         # self.state = 'chose'
         # run = True
@@ -233,7 +253,6 @@ class World:
         # 地图数据
         self.data = load_map_data()
         self.map_state = load_map_data()
-
         self.dirt_img = pygame.image.load('res/imgs/d.png')
         self.grass_img = pygame.image.load('res/imgs/g.png')
         self.detail_img = pygame.image.load("res/imgs/detail.png")
@@ -246,9 +265,25 @@ class World:
         self.tile_list = []
         # 地图瓦片上的角色
         self.races_place, self.enemy_place = load_role_place(self.data.shape)
-        self.race = []  # 角色列表
+        # print(self.races_place)
+        # print(self.enemy_place)
 
+        # 行动表
+        self.Action = []
+        for x in range(self.races_place.shape[0]):
+            for y in range(self.races_place.shape[1]):
+                if self.races_place[x][y]:
+                    # print(self.races_place[x][y])
+                    self.Action.append(ally.AllyUnit(1, self.races_place[x][y], "精灵", "骑士", x, y))
+                elif self.enemy_place[x][y]:
+                    # print(self.enemy_place[x][y])
+                    self.Action.append(enemy.EnemyUnit(1, self.races_place[x][y], "魔族", x, y))
+
+        self.race = []  # 角色列表
         self.selected_race = None
+        # 按照speed属性排序
+        self.Action.sort(key=lambda unit: unit.speed)
+
 
         self.selected_border_positions = []  # 人物的行动范围
 
@@ -358,9 +393,9 @@ class World:
             for data_tile, map_tile in zip(row_data, row_state):
                 if self.races_place[row_count][col_count]:  # 确定绘制地点
                     # TODO: id和name的确定方式
-                    race = ally.AllyUnit('ally', 'name', self.races_place[row_count][col_count], '骑士')
+                    race = ally.AllyUnit('ally', 'name', self.races_place[row_count][col_count], '骑士', 0 ,0)
                 elif self.enemy_place[row_count][col_count]:
-                    race = enemy.EnemyUnit('enemy', 'name', self.enemy_place[row_count][col_count])
+                    race = enemy.EnemyUnit('enemy', 'name', self.enemy_place[row_count][col_count], 0, 0)
                 else:
                     race = None
 

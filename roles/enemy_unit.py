@@ -2,11 +2,12 @@ from roles.unit import Unit
 
 
 class EnemyUnit(Unit):
-    def __init__(self, ID, name, race):
+    def __init__(self, ID, name, race, x, y):
         super().__init__(ID, name, 80, 35, 30, 2, 3, 15, 15, 30, 10, 5)  # 基础设定
 
         self.race = race  # 种族属性
-
+        self.x = x
+        self.y = y
         # 根据种族修改属性
         if race == '魔族':
             self.speed += 15

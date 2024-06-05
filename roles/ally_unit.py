@@ -2,11 +2,12 @@ from roles.unit import Unit
 
 
 class AllyUnit(Unit):
-    def __init__(self, ID, name, race, unit_type):
+    def __init__(self, ID, name, race, unit_type, x, y):
         super().__init__(ID, name, 70, 30, 25, 1, 3, 10, 10, 25, 5, 3)  # 基础设定
         self.race = race  # 种族属性
         self.unit_type = unit_type  # 兵种属性
-
+        self.x = x
+        self.y = y
         # 根据种族修改属性
         if race == '长身人':
             self.speed += 10
