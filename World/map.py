@@ -1,12 +1,16 @@
 import pygame.mouse
 import json
-from World.chose_map import *
+from init import *
+from World.Lattice import *
+from World.load_data import *
 import roles.ally_unit as ally
 import roles.enemy_unit as enemy
+
 
 class GameMap:
     def __init__(self, event_manager):
         # 事件管理器
+        self.mouse_pressed = False
         self.event_manager = event_manager
 
         self.screen_width, self.screen_height = WIDTH, HEIGHT  # 窗口大小
@@ -19,10 +23,8 @@ class GameMap:
 
         # 创建世界
         self.world = World()
-        self.chose = Chose()
 
         self.dragging = False  # 是否在拖拽地图
-        self.state = None
         self.start_drag_pos = (0, 0)  # 拖拽位置
 
         # 角色信息框的位置和尺寸
@@ -109,14 +111,14 @@ class GameMap:
 
         # 绘制按钮
         self.draw_buttons()
-    
-    # 点击显示信息框 
+
+    # 点击显示信息框
     def draw_selected_info(self):
         # 创建一个 Surface 对象作为信息框背景
         info_bg = pygame.Surface((200, 100), pygame.SRCALPHA)
         info_bg.fill((128, 128, 128, 128))  # 半透明灰色背景
         self.screen.blit(info_bg, (WIDTH - 200, 0))  # 将半透明背景绘制到屏幕上
-        
+
         # 字体
         font = pygame.font.Font(font_path, 16)
 
@@ -138,12 +140,12 @@ class GameMap:
     def draw_buttons(self):
         for i, (button_name, button_rect) in enumerate(self.buttons.items()):
             # 按钮之间的间距
-            margin = 50 
+            margin = 50
 
             # 计算每个按钮的位置
             button_x = WIDTH - (len(self.buttons) - i) * (2 * self.button_radius + margin)
             button_y = HEIGHT - self.button_radius - 10
-            
+
             # 绘制灰色圆形背景
             pygame.draw.circle(self.screen, (128, 128, 128, 128), (button_x, button_y), self.button_radius)
 
@@ -170,31 +172,20 @@ class GameMap:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
-            # esc菜单
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    if self.state == 'chose':
-                        return False
-                    else:
-                        self.event_manager.post("show_main_page", self.event_manager)
-                    # self.save_state()
+                    self.event_manager.post("show_main_page", self.event_manager)
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()
                 if event.button == 1:  # 左键点击
-                    pos = pygame.mouse.get_pos()
-                    if self.state == 'chose':
-                        if any(rect.collidepoint(pos) for rect in self.chose.avatar_rects):
-                            self.chose.handle_avatar_click(pos)
-                        else:
-                            self.chose.handle_map_click(pos)
+                    if any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
+                        self.handle_button_click(pos)
+                        self.mouse_pressed = True
                     else:
-                        if any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
-                            self.handle_button_click(pos)
-                            self.mouse_pressed = True
-                        else:
-                            self.world.check_click(pos)  # 点击其他
+                        self.world.check_click(pos)
                 elif event.button == 3:  # 右键按下开始拖动地图
                     self.dragging = True
-                    self.start_drag_pos = pygame.mouse.get_pos()
+                    self.start_drag_pos = pos
                 elif event.button == 4:  # 滚轮缩放
                     if self.world.tile_size <= 80:
                         self.world.tile_size += 1
@@ -221,24 +212,15 @@ class GameMap:
     
         return
     def run(self):
-        # self.state = 'chose'
-        # run = True
-        # while run:
-        #     self.clock.tick(10)
-        #     self.screen.blit(self.cloud_img, (0, 0))
-        #     self.world.races_place = self.chose.chose_draw(self.screen)
-        #     run = self.events()
-        #     pygame.display.update()  # 更新屏幕内容
-        # self.state = None
-
         # self.load_state()
         run = True
         while run:
-            self.clock.tick(60)
+            # print(pygame.mouse.get_pos())
+            self.clock.tick(10)
             self.screen.blit(self.cloud_img, (0, 0))
             self.world.draw(self.screen)
             # 绘制固定角色信息
-            self.draw_fixed_info()  
+            self.draw_fixed_info()
             # 绘制当前选中角色信息
             if self.world.selected_race:
                 self.draw_selected_info()
@@ -253,12 +235,20 @@ class World:
         # 地图数据
         self.data = load_map_data()
         self.map_state = load_map_data()
+
+        # 瓦片大小
+        self.tile_size = 50
+        self.tile_size_old = 50
+
         self.dirt_img = pygame.image.load('res/imgs/d.png')
         self.grass_img = pygame.image.load('res/imgs/g.png')
         self.detail_img = pygame.image.load("res/imgs/detail.png")
 
-        # 瓦片大小
-        self.tile_size = 50
+        # 缓存缩放后的图像
+        self.dirt_img_scaled = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
+        self.grass_img_scaled = pygame.transform.scale(self.grass_img, (self.tile_size, self.tile_size))
+        self.detail_img_scaled = pygame.transform.scale(self.detail_img, (self.tile_size, self.tile_size))
+
         # 设置初始视口偏移量
         self.viewport_offset = [0, 0]
         # 瓦片列表
@@ -384,6 +374,12 @@ class World:
                 self.selected_race = None
                 # TODO: 选中一个又点另一个角色？
 
+    def redraw_img(self):
+        self.dirt_img_scaled = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
+        self.grass_img_scaled = pygame.transform.scale(self.grass_img, (self.tile_size, self.tile_size))
+        self.detail_img_scaled = pygame.transform.scale(self.detail_img, (self.tile_size, self.tile_size))
+        self.tile_size_old = self.tile_size
+
     def draw(self, viewport):
         self.tile_list = []
 
@@ -396,18 +392,21 @@ class World:
                     race = ally.AllyUnit('ally', 'name', self.races_place[row_count][col_count], '骑士', 0 ,0)
                 elif self.enemy_place[row_count][col_count]:
                     race = enemy.EnemyUnit('enemy', 'name', self.enemy_place[row_count][col_count], 0, 0)
+                    race = ally.AllyUnit('ally', self.races_place[row_count][col_count], 'race', '骑士', 0, 0)
+                elif self.enemy_place[row_count][col_count]:
+                    race = enemy.EnemyUnit('enemy', self.enemy_place[row_count][col_count], 'race', 0, 0)
                 else:
                     race = None
 
+                if self.tile_size_old != self.tile_size:
+                    self.redraw_img()
+
                 if data_tile == 1:
-                    img = pygame.transform.scale(self.grass_img, (self.tile_size, self.tile_size))
-                    self.s_img(img, col_count, row_count, map_tile, race)
+                    self.s_img(self.dirt_img_scaled, col_count, row_count, map_tile, race)
                 elif data_tile == 2:
-                    img = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
-                    self.s_img(img, col_count, row_count, map_tile, race)
+                    self.s_img(self.grass_img_scaled, col_count, row_count, map_tile, race)
                 elif data_tile == 3:
-                    img = pygame.transform.scale(self.detail_img, (self.tile_size, self.tile_size))
-                    self.s_img(img, col_count, row_count, map_tile, race)
+                    self.s_img(self.detail_img_scaled, col_count, row_count, map_tile, race)
 
                 col_count += 1
             row_count += 1
