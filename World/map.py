@@ -39,11 +39,13 @@ class GameMap:
         self.button_radius = 40  # 半径
         self.buttons = {
             "move": pygame.Rect(self.screen_width - self.button_width - 10,
-                                self.screen_height - 4 * self.button_height - 20, self.button_width, self.button_height),
+                                self.screen_height - 4 * self.button_height - 20, self.button_width,
+                                self.button_height),
             "attack": pygame.Rect(self.screen_width - self.button_width - 10, self.screen_height - 3 *
                                   self.button_height - 15, self.button_width, self.button_height),
             "skill": pygame.Rect(self.screen_width - self.button_width - 10,
-                                 self.screen_height - 2 * self.button_height - 10, self.button_width, self.button_height),
+                                 self.screen_height - 2 * self.button_height - 10, self.button_width,
+                                 self.button_height),
             "end": pygame.Rect(self.screen_width - self.button_width - 10,
                                self.screen_height - self.button_height - 5, self.button_width, self.button_height)
         }  #
@@ -75,21 +77,21 @@ class GameMap:
     # 固定信息框
     def draw_fixed_info(self):
         pygame.draw.rect(self.screen, WHITE, self.fixed_info_rect)
-        
+
         # 字体
         font = pygame.font.Font(font_path, 16)
-        
+
         # 获取当前固定显示的角色信息
         fixed_character_info = self.world.Action[0]
-        
+
         # 加载头像
         avatar_path = "res/imgs/characters/1.png"  # 头像路径，可以根据实际情况动态获取
         avatar_img = pygame.image.load(avatar_path).convert_alpha()
         avatar_img = pygame.transform.scale(avatar_img, (50, 50))  # 调整头像大小
-        
+
         # 绘制头像
         self.screen.blit(avatar_img, (10, HEIGHT - 90))
-        
+
         # 角色其他信息
         info = [
             f"名字: {fixed_character_info.name}",
@@ -99,7 +101,7 @@ class GameMap:
             f"魔法攻击: {fixed_character_info.magic_power}",
             f"魔法防御: {fixed_character_info.magic_def}"
         ]
-        
+
         # 绘制角色信息（每列两个信息）
         for i, line in enumerate(info):
             text = font.render(line, True, BLACK)
@@ -209,14 +211,14 @@ class GameMap:
     # 按照进度条行动
     def action(self):
         # TODO: 进度条
-    
+
         return
+
     def run(self):
         # self.load_state()
         run = True
         while run:
-            # print(pygame.mouse.get_pos())
-            self.clock.tick(10)
+            self.clock.tick(60)
             self.screen.blit(self.cloud_img, (0, 0))
             self.world.draw(self.screen)
             # 绘制固定角色信息
@@ -238,7 +240,7 @@ class World:
 
         # 瓦片大小
         self.tile_size = 50
-        self.tile_size_old = 50
+        self.tile_size_old = 0
 
         self.dirt_img = pygame.image.load('res/imgs/d.png')
         self.grass_img = pygame.image.load('res/imgs/g.png')
@@ -255,34 +257,28 @@ class World:
         self.tile_list = []
         # 地图瓦片上的角色
         self.races_place, self.enemy_place = load_role_place(self.data.shape)
-        # print(self.races_place)
-        # print(self.enemy_place)
+        self.races_img = {}
 
         # 行动表
         self.Action = []
         for x in range(self.races_place.shape[0]):
             for y in range(self.races_place.shape[1]):
                 if self.races_place[x][y]:
-                    # print(self.races_place[x][y])
                     self.Action.append(ally.AllyUnit(1, self.races_place[x][y], "精灵", "骑士", x, y))
                 elif self.enemy_place[x][y]:
-                    # print(self.enemy_place[x][y])
-                    self.Action.append(enemy.EnemyUnit(1, self.races_place[x][y], "魔族", x, y))
+                    self.Action.append(enemy.EnemyUnit(2, self.races_place[x][y], "魔族", x, y))
 
-        self.race = []  # 角色列表
         self.selected_race = None
         # 按照speed属性排序
         self.Action.sort(key=lambda unit: unit.speed)
-
 
         self.selected_border_positions = []  # 人物的行动范围
 
     # 返回该瓦片上的角色
     def find_race(self, row, col):
-        for tile in self.tile_list:
-            if (tile.race is not None and row == ((tile.type[1].y - self.viewport_offset[1]) // self.tile_size) and
-                    col == ((tile.type[1].x - self.viewport_offset[0]) // self.tile_size)):
-                return tile.race
+        for role in self.Action:
+            if role.y == col and role.x == row:
+                return role
 
         return None
 
@@ -353,19 +349,25 @@ class World:
         row = y // self.tile_size
 
         if 0 <= col < self.data.shape[1] and 0 <= row < self.data.shape[0] and self.data[row][col] != -1:
-            if self.find_race(row, col):  # 如果当前位置有角色
-                race = self.find_race(row, col)
-                if race.ID == 'ally':
+            race = self.find_race(row, col)
+            if race:  # 如果当前位置有角色
+                if race.ID == 1:
                     self.selected_race = [self.races_place[row][col], row, col, race.ID]  # 记录
                 else:
                     self.selected_race = [self.enemy_place[row][col], row, col, race.ID]
                 self.border_positions(row, col)
             elif (self.races_place[row][col] == '' and self.selected_race is not None
                   and self.enemy_place[row][col] == ''):  # 点击瓦片没有角色
-                if self.selected_race[3] == 'ally':
+                if self.selected_race[3] == 1:
                     if (row, col) in self.selected_border_positions:  # 限制运动范围
-                        self.races_place[self.selected_race[1]][self.selected_race[2]] = ''
+                        old_x, old_y = self.selected_race[1], self.selected_race[2]
+                        self.races_place[old_x][old_y] = ''
                         self.races_place[row][col] = self.selected_race[0]
+
+                        selected_race_instance = self.find_race(old_x, old_y)
+                        selected_race_instance.x = row
+                        selected_race_instance.y = col
+
                         self.selected_race[1], self.selected_race[2] = row, col
                         self.selected_race = None
                 else:
@@ -378,28 +380,27 @@ class World:
         self.dirt_img_scaled = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
         self.grass_img_scaled = pygame.transform.scale(self.grass_img, (self.tile_size, self.tile_size))
         self.detail_img_scaled = pygame.transform.scale(self.detail_img, (self.tile_size, self.tile_size))
+
+        for r in self.Action:
+            self.races_img[r.name] = pygame.transform.scale(pygame.image.load(r.img), (self.tile_size, self.tile_size))
         self.tile_size_old = self.tile_size
 
     def draw(self, viewport):
         self.tile_list = []
+
+        if self.tile_size_old != self.tile_size:
+            self.redraw_img()
 
         row_count = 0
         for row_data, row_state in zip(self.data, self.map_state):
             col_count = 0
             for data_tile, map_tile in zip(row_data, row_state):
                 if self.races_place[row_count][col_count]:  # 确定绘制地点
-                    # TODO: id和name的确定方式
-                    race = ally.AllyUnit('ally', 'name', self.races_place[row_count][col_count], '骑士', 0 ,0)
+                    race = 1
                 elif self.enemy_place[row_count][col_count]:
-                    race = enemy.EnemyUnit('enemy', 'name', self.enemy_place[row_count][col_count], 0, 0)
-                    race = ally.AllyUnit('ally', self.races_place[row_count][col_count], 'race', '骑士', 0, 0)
-                elif self.enemy_place[row_count][col_count]:
-                    race = enemy.EnemyUnit('enemy', self.enemy_place[row_count][col_count], 'race', 0, 0)
+                    race = 2
                 else:
                     race = None
-
-                if self.tile_size_old != self.tile_size:
-                    self.redraw_img()
 
                 if data_tile == 1:
                     self.s_img(self.dirt_img_scaled, col_count, row_count, map_tile, race)
@@ -416,11 +417,9 @@ class World:
             tile_y = tile.type[1].y - self.viewport_offset[1]
 
             if tile.race:
-                # TODO:使用角色自身的图片
-                race = self.find_race(tile_y // self.tile_size, tile_x // self.tile_size)
-                img = pygame.transform.scale(pygame.image.load(race.img), (self.tile_size, self.tile_size))
-                viewport.blit(img, (tile_x, tile_y))
-                if self.selected_race is not None and [tile.race.race, tile_y // self.tile_size,
+                race = self.find_race(tile.type[1].y // self.tile_size, tile.type[1].x // self.tile_size)
+                viewport.blit(self.races_img[race.name], (tile_x, tile_y))
+                if self.selected_race is not None and [race.name, tile_y // self.tile_size,
                                                        tile_x // self.tile_size] == self.selected_race:
                     # 绘制选中边框
                     pygame.draw.rect(viewport, (0, 255, 0), (tile_x, tile_y, self.tile_size, self.tile_size), 2)
@@ -430,6 +429,5 @@ class World:
         # 鼠标所处位置加边框
         self.add_border([self.border(pygame.mouse.get_pos())], viewport)
 
-        if self.selected_race and self.selected_race[3] == 'ally':
+        if self.selected_race and self.selected_race[3] == 1:
             self.add_border(self.selected_border_positions, viewport)
-
