@@ -48,11 +48,17 @@ class GameMap:
                                       (WIDTH - 1 * 130, self.button_height), self.button_radius)
         }
 
+        # 添加按钮抖动
+        self.button_shake = {name: 0 for name in self.buttons.keys()}  # 按钮抖动状态
+
         self.races_img = {}
         for r in self.world.Action:
             self.races_img[r.name] = pygame.transform.scale(pygame.image.load(r.img), (20, 20))
 
         self.act = False
+
+        # 用于判断当前是attack还是move
+        self.current_action = None
 
     def save_state(self, filename="save/game_state.pkl"):
         # 确保保存目录存在
@@ -148,6 +154,9 @@ class GameMap:
         self.type = None
 
     def draw_buttons(self):
+        mouse_pos = pygame.mouse.get_pos()
+        hover = False  # 用于检测是否悬浮在按钮上
+
         for i, (button_name, button_rect) in enumerate(self.buttons.items()):
             # 按钮之间的间距
             margin = 50
@@ -155,6 +164,17 @@ class GameMap:
             # 计算每个按钮的位置
             button_x = WIDTH - (len(self.buttons) - i) * (2 * self.button_radius + margin)
             button_y = HEIGHT - self.button_radius - 10
+
+            # 按钮抖动效果
+            if self.button_shake[button_name] > 0:
+                shake_offset = 5 * (-1) ** self.button_shake[button_name]  # 抖动偏移量
+                button_x += shake_offset
+                self.button_shake[button_name] -= 1
+
+            # 检查鼠标是否悬浮在按钮上
+            if pygame.Rect(button_x - self.button_radius, button_y - self.button_radius, self.button_radius * 2,
+                           self.button_radius * 2).collidepoint(mouse_pos):
+                hover = True
 
             # 绘制灰色圆形背景
             pygame.draw.circle(self.screen, (128, 128, 128, 128), (button_x, button_y), self.button_radius)
@@ -165,21 +185,30 @@ class GameMap:
             text_rect = text.get_rect(center=(button_x, button_y))
             self.screen.blit(text, text_rect)
 
+            # 如果鼠标悬浮在任意按钮上，设置光标为手型，否则恢复默认光标
+            if hover:
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+            else:
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
     def handle_button_click(self, pos):
         for button_name, button_cir in self.buttons.items():
             if button_cir.collidepoint(pos) and self.type is None:
+                # 按钮抖动效果
+                self.button_shake[button_name] = 1  # 设置抖动次数
+
                 # TODO:怎么进行动作
                 if self.world.Action[0].ID == 1:
-                    if button_name == "move":
-                        self.world.border_positions(self.world.Action[0].x, self.world.Action[0].y)
+                    if button_name == "move" or button_name == "attack":
+                        self.world.current_action = button_name
+                        self.world.border_positions(self.world.Action[0].x, self.world.Action[0].y,
+                                                    range_type=self.world.current_action)
                         self.world.add_border(self.world.selected_border_positions, self.screen)
                         self.world.draw_border = True
-                    elif button_name == "attack":
-                        pass
                     elif button_name == "skill":
-                        pass
+                        self.current_action = None
                     elif button_name == "end":
-                        pass
+                        self.current_action = None
 
     def events(self):
         for event in pygame.event.get():
@@ -311,6 +340,9 @@ class World:
         self.selected_border_positions = []  # 人物的行动范围
         self.draw_border = False
 
+        # 判断当前是攻击还是移动
+        self.current_action = None
+
     def Action_change(self):
         race = self.Action.pop(0)
         self.Action.append(race)
@@ -323,9 +355,13 @@ class World:
 
         return None
 
-    def border_positions(self, row, col):
+    def border_positions(self, row, col, range_type='move'):
         if self.find_race(row, col):
-            self.selected_border_positions = self.find_race(row, col).move_border(row, col, self.data)
+            unit = self.find_race(row, col)
+            if range_type == 'move':
+                self.selected_border_positions = unit.move_border(row, col, self.data)
+            elif range_type == 'attack':
+                self.selected_border_positions = unit.attack_border(row, col, self.data)
         else:
             self.selected_border_positions = []
 
@@ -361,7 +397,7 @@ class World:
         return None
 
     def add_border(self, hovered_tiles, viewport):
-        # 判读是否加边框
+        # 判断是否加边框
         for hovered_tile in hovered_tiles:
             if hovered_tile:
                 row, col = hovered_tile
@@ -381,43 +417,6 @@ class World:
         img_tile = (img, img_rect)
         self.tile_list.append(Lattice(img_tile, map_tile, 0, None, race))
 
-    # 转换角色位置
-    # def check_click(self, pos):
-    #     x, y = pos
-    #     x += self.viewport_offset[0]
-    #     y += self.viewport_offset[1]
-    #     col = x // self.tile_size
-    #     row = y // self.tile_size
-    #
-    #     if 0 <= col < self.data.shape[1] and 0 <= row < self.data.shape[0] and self.data[row][col] != -1:
-    #         # race = self.find_race(row, col)
-    #         # if race:  # 如果当前位置有角色
-    #         #     if race.ID == 1:
-    #         #         self.selected_race = [self.races_place[row][col], row, col, race.ID]  # 记录
-    #         #     else:
-    #         #         self.selected_race = [self.enemy_place[row][col], row, col, race.ID]
-    #         #     self.border_positions(row, col)
-    #
-    #         if (self.races_place[row][col] == '' and self.selected_race is not None
-    #               and self.enemy_place[row][col] == ''):  # 点击瓦片没有角色
-    #             if self.selected_race[3] == 1:
-    #                 if (row, col) in self.selected_border_positions:  # 限制运动范围
-    #                     old_x, old_y = self.selected_race[1], self.selected_race[2]
-    #                     self.races_place[old_x][old_y] = ''
-    #                     self.races_place[row][col] = self.selected_race[0]
-    #
-    #                     selected_race_instance = self.find_race(old_x, old_y)
-    #                     selected_race_instance.x = row
-    #                     selected_race_instance.y = col
-    #
-    #                     self.selected_race[1], self.selected_race[2] = row, col
-    #                     self.selected_race = None
-    #             else:
-    #                 self.selected_race = None
-    #         else:
-    #             self.selected_race = None
-    #             # TODO: 选中一个又点另一个角色？
-
     def check_click(self, pos):
         x, y = pos
         x += self.viewport_offset[0]
@@ -427,14 +426,13 @@ class World:
 
         if 0 <= col < self.data.shape[1] and 0 <= row < self.data.shape[0] and self.data[row][col] != -1:
             race = self.find_race(row, col)
-            if race:  # 如果当前位置有角色
+            if self.current_action not in ["move", "attack"] and race:  # 如果当前操作不是移动or攻击，并且当前位置有角色
                 if race.ID == 1:
                     self.selected_race = [self.races_place[row][col], row, col, race.ID]  # 记录
                 else:
                     self.selected_race = [self.enemy_place[row][col], row, col, race.ID]
-                self.border_positions(row, col)
 
-            if self.races_place[row][col] == '' and self.enemy_place[row][col] == '':  # 点击瓦片没有角色
+            if self.current_action == 'move' and self.races_place[row][col] == '' and self.enemy_place[row][col] == '':  # 点击瓦片没有角色
                 if (row, col) in self.selected_border_positions:  # 限制运动范围
                     selected_race_instance = self.Action[0]
                     old_x, old_y = selected_race_instance.x, selected_race_instance.y
@@ -446,6 +444,22 @@ class World:
 
                     self.draw_border = False
                     self.Action_change()
+                    self.current_action = None  # 复位当前动作
+
+            if self.current_action == "attack" and (row, col) in self.selected_border_positions:
+                target = self.find_race(row, col)
+                if isinstance(target, enemy.EnemyUnit):
+                    damage = self.Action[0].attack(target)
+                    print(f"Attacked {target.ID} for {damage} damage")
+                    print(target.health)
+                    if target.health <= 0:
+                        # 从当前地图and行动条中去掉
+                        print("target out")
+                    self.draw_border = False
+                    self.Action_change()
+                    self.current_action = None  # 复位当前动作
+                else:
+                    print("Invalid target!")
 
     def redraw_img(self):
         self.dirt_img_scaled = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
