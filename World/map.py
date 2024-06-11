@@ -253,9 +253,7 @@ class GameMap:
         # TODO: 进度条
 
         self.world.Action[0]
-        self.Action.sort(key=lambda unit: unit.speed)
-
-        return
+        self.world.Action.sort(key=lambda unit: unit.speed)
     
         # 绘制带圆角的矩形框
         rect = pygame.Rect(10, 50, 10, HEIGHT - 200)
@@ -266,6 +264,8 @@ class GameMap:
         pygame.draw.rect(self.screen, BLACK, rect, width=2, border_radius=5)
 
         self.draw_race_avatars(5, 50, 20)
+        
+        return 
 
     def enemy_act(self):
         self.world.Action_change()
