@@ -40,11 +40,14 @@ def play_battle_bgm_thread():
 # 文字动画显示函数
 def animate_text(text, pos, font, screen, color=WHITE, delay=0.1):
     x, y = pos
+    # 一个个输出文字
     for char in text:
         text_surface = font.render(char, True, color)
         screen.blit(text_surface, (x, y))
         x += text_surface.get_width()
         pygame.display.update()
+        # 按键音效
+        key_sound.play()
         time.sleep(delay)
 
 # 启动页面类

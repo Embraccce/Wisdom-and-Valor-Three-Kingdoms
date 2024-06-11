@@ -6,6 +6,7 @@ from World.Lattice import *
 from World.load_data import *
 import roles.ally_unit as ally
 import roles.enemy_unit as enemy
+import time
 
 # 按键类（菜单中的按钮）
 class Button(object):
@@ -89,7 +90,7 @@ class GameMap:
         self.fixed_info_rect = pygame.Rect(0, HEIGHT - 100, WIDTH, 100)
         # 点击到的角色
         self.selected_info_rect = pygame.Rect(WIDTH - 200, 0, 200, 150)
-
+        
         # 定义按钮
         self.button_height = HEIGHT - 60
         self.button_radius = 40  # 半径
@@ -294,6 +295,7 @@ class GameMap:
                 elif event.button == 5:
                     if self.world.tile_size > 20:
                         self.world.tile_size -= 1
+                    
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.mouse_pressed = False  # 重置鼠标按钮状态
@@ -308,28 +310,6 @@ class GameMap:
 
         return True
 
-    # 按照进度条行动
-    def action(self):
-        # TODO: 进度条
-
-        self.world.Action[0]
-        self.world.Action.sort(key=lambda unit: unit.speed)
-    
-        # 绘制带圆角的矩形框
-        rect = pygame.Rect(10, 50, 10, HEIGHT - 200)
-
-        # 内部实心圆角矩形
-        pygame.draw.rect(self.screen, BLACK, rect, border_radius=5)
-
-        pygame.draw.rect(self.screen, BLACK, rect, width=2, border_radius=5)
-
-        self.draw_race_avatars(5, 50, 20)
-        
-        return 
-
-    def enemy_act(self):
-        self.world.Action_change()
-
     def draw_race_avatars(self, x, y, width):
         total = y
         for index, unit in enumerate(self.world.Action):
@@ -340,6 +320,47 @@ class GameMap:
 
             # 绘制头像
             self.screen.blit(self.races_img[unit.name], (avatar_x, avatar_y))
+
+
+    # 按照进度条行动
+    def action(self):
+        # TODO: 进度条
+
+        self.world.Action[0]
+        self.world.Action.sort(key=lambda unit: unit.speed)
+
+        # 绘制带圆角的矩形框
+        rect = pygame.Rect(10, 50, 10, HEIGHT - 200)
+
+        # 内部实心圆角矩形
+        pygame.draw.rect(self.screen, BLACK, rect, border_radius=5)
+
+        pygame.draw.rect(self.screen, BLACK, rect, width=2, border_radius=5)
+
+        self.draw_race_avatars(5, 50, 20)
+
+        return 
+
+    def enemy_act(self):
+        self.world.Action_change()
+
+    def show_menu(self):
+        menu_image_rect = menu.get_rect(center=(WIDTH // 2 + 25, HEIGHT // 2))
+        self.screen.blit(menu, menu_image_rect.topleft)
+        
+        # 菜单显示
+        pos = pygame.mouse.get_pos()
+        if self.menu.active:
+            if self.menu.return_Button.check_click(pos):
+                self.menu.return_Button = Button("返回主页面", RED, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+            else:
+                self.menu.return_Button = Button("返回主页面", WHITE, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+            if self.menu.continue_Button.check_click(pos):
+                self.menu.continue_Button = Button("继续", RED, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50) 
+            else:
+                self.menu.continue_Button = Button("继续", WHITE, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
+        self.menu.return_Button.display()
+        self.menu.continue_Button.display()
 
     def run(self):
         # self.load_state()
@@ -366,11 +387,7 @@ class GameMap:
                 self.screen.blit(mask, (0, 0))
                 
                 # 绘制菜单图片
-                menu_image_rect = menu.get_rect(center=(WIDTH // 2 + 25, HEIGHT // 2))
-                self.screen.blit(menu, menu_image_rect.topleft)
-
-                self.menu.return_Button.display()
-                self.menu.continue_Button.display()
+                self.show_menu()
 
             # 处理事件并更新屏幕内容
             run = self.events()
