@@ -209,8 +209,11 @@ class GameMap:
     # 按照进度条行动
     def action(self):
         # TODO: 进度条
-    
+        self.world.Action[0]
+        self.Action.sort(key=lambda unit: unit.speed)
+
         return
+    
     def run(self):
         # self.load_state()
         run = True
