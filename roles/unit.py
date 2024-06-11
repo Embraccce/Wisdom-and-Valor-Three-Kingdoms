@@ -15,10 +15,10 @@ class Unit:
         self.jump = jump  # 跳跃力，用于有高度差的地图
         self.action_time = 0  # 行动时间点，用于决定单位何时进行下一个动作
         self.img = "res/imgs/characters/1.png"
+        self.death = ["res/imgs/characters/1.png", "res/imgs/characters/2.png", "res/imgs/characters/3.png"]
         self.x = None  # 所在x轴
         self.y = None  # 所在y轴
         self.action = self.speed  # 行动值
-        self.image = None  # 图片位置
 
     def act(self):
         # 更新单位的行动时间
