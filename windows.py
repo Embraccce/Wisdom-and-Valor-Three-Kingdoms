@@ -6,9 +6,64 @@ from World.map import *
 from pygame.locals import *
 from init import *
 import textwrap
+import threading
 
 clock = pygame.time.Clock()
 clock.tick(FPS)
+
+is_home_bgm_playing = False
+
+# 定义一个函数用于播放背景音乐
+def play_bgm(bgm_path):
+    pygame.mixer.music.load(bgm_path)
+    pygame.mixer.music.play(-1)  # -1 表示循环播放
+
+# 定义一个函数用于播放主页背景音乐
+def play_home_bgm():
+    play_bgm("res/bgm/bgm.mp3")
+
+# 定义一个函数用于播放战斗背景音乐
+def play_battle_bgm():
+    play_bgm("res/bgm/battle.mp3")
+
+# 在后台线程中播放主页背景音乐
+def play_home_bgm_thread():
+    global is_home_bgm_playing
+    if not is_home_bgm_playing:
+        is_home_bgm_playing = True
+        play_home_bgm()
+
+# 在后台线程中播放战斗背景音乐
+def play_battle_bgm_thread():
+    play_battle_bgm()
+
+# 文字动画显示函数
+def animate_text(text, pos, font, screen, color=WHITE, delay=0.1):
+    x, y = pos
+    for char in text:
+        text_surface = font.render(char, True, color)
+        screen.blit(text_surface, (x, y))
+        x += text_surface.get_width()
+        pygame.display.update()
+        time.sleep(delay)
+
+# 启动页面类
+class StartupScreen:
+    def __init__(self, screen):
+        self.screen = screen
+        self.font = pygame.font.Font(art_path, 74)
+        self.small_font = pygame.font.Font(art_path, 50)
+        self.steps = [
+            ("这是一个游戏样本", (WIDTH // 2 - 320, HEIGHT // 2 - 100), self.font),
+            ("出品人：游戏开发委员会", (WIDTH // 2 - 300, HEIGHT // 2 + 50), self.small_font)
+        ]
+        self.current_step = 0
+
+    def show(self):
+        self.screen.fill(BLACK)
+        for text, pos, font in self.steps:
+            animate_text(text, pos, font, self.screen)
+            time.sleep(1)  # 显示每段文字后暂停一段时间
 
 # 按键类
 class Button(object):
@@ -73,6 +128,10 @@ def choose_level(event_manager):
             if pygame.mouse.get_pressed()[0]:
                 if play_button.check_click(pygame.mouse.get_pos()):
                     map = GameMap(event_manager)
+                    global is_home_bgm_playing
+                    is_home_bgm_playing = False
+                    battle_bgm_thread = threading.Thread(target=play_battle_bgm_thread)
+                    battle_bgm_thread.start()
                     map.run()
                     return
                 if return_button.check_click(pygame.mouse.get_pos()):
@@ -480,6 +539,13 @@ def library(event_manager):
 def home_page(event_manager):
     # 绘制主页面背景
     screen.blit(bg, (0, 0))
+
+    # 多线程bgm
+    # 启动后台线程播放主页背景音乐
+    global is_home_bgm_playing
+    if not is_home_bgm_playing:
+        home_bgm_thread = threading.Thread(target=play_home_bgm_thread)
+        home_bgm_thread.start()
 
     # 绘制游戏名（主界面上的）
     # game_title = font.render('GAME OF THRONE', True, WHITE)

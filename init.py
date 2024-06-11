@@ -29,9 +29,14 @@ BLACK = (0, 0, 0)
 PINK = (255, 182, 193)
 FPS = 60
 TRANSPARENT_GRAY = (128, 128, 128, 128)
+
 # 加载宋体字体文件
 font_path = "simhei.ttf"  # 这里是你放置宋体字体文件的路径
 font = pygame.font.Font(font_path, 36)
+small_font = pygame.font.Font(font_path, 18)
+
+# 加载艺术字体文件
+art_path = "art.ttf"
 
 # 用户信息
 saved = 'usr.pkl'
