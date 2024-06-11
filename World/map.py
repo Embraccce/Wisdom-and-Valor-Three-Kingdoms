@@ -1,4 +1,5 @@
 import pygame.mouse
+from World.Damage import *
 import time
 from init import *
 from World.Lattice import *
@@ -139,11 +140,11 @@ class GameMap:
         font = pygame.font.Font(font_path, 16)
 
         if self.world.selected_race:
-            race_info = self.world.selected_race[0]  # 当前选中角色的名称
+            race_info = self.world.selected_race  # 当前选中角色的名称
             info = [
-                f"名字: {race_info}",
+                f"名字: {race_info.name}",
                 f"种类: 类型",  # 可替换为实际的种类信息
-                "基础信息",  # 可替换为实际的基础信息
+                f"血量： {race_info.health}",  # 可替换为实际的基础信息
             ]
             for i, line in enumerate(info):
                 text = font.render(line, True, BLACK)
@@ -155,6 +156,7 @@ class GameMap:
 
     def draw_buttons(self):
         mouse_pos = pygame.mouse.get_pos()
+        hover = False  # 用于检测是否悬浮在按钮上
         hover = False  # 用于检测是否悬浮在按钮上
 
         for i, (button_name, button_rect) in enumerate(self.buttons.items()):
@@ -269,7 +271,7 @@ class GameMap:
         for index, unit in enumerate(self.world.Action):
             # 计算头像的位置
             avatar_x = x
-            avatar_y = (total + unit.speed) / 2  # y + index * (avatar_size + padding) +
+            avatar_y = (total + unit.speed) / 2
             total += avatar_y
 
             # 绘制头像
@@ -300,6 +302,7 @@ class GameMap:
 class World:
     def __init__(self):
         # 地图数据
+        self.damage_texts = []
         self.data = load_map_data()
         self.map_state = load_map_data()
 
@@ -331,9 +334,13 @@ class World:
                 if self.races_place[x][y]:
                     self.Action.append(ally.AllyUnit(1, self.races_place[x][y], "精灵", "骑士", x, y))
                 elif self.enemy_place[x][y]:
-                    self.Action.append(enemy.EnemyUnit(2, self.races_place[x][y], "魔族", x, y))
+                    self.Action.append(enemy.EnemyUnit(2, self.enemy_place[x][y], "魔族", x, y))
 
         self.selected_race = None
+        self.late_time = 0
+        self.dying_race = None  # 正在亖的角色
+        self.death_animation_index = 0
+
         # 按照speed属性排序
         self.Action.sort(key=lambda unit: unit.speed)
 
@@ -417,17 +424,6 @@ class World:
         img_tile = (img, img_rect)
         self.tile_list.append(Lattice(img_tile, map_tile, 0, None, race))
 
-    # 删除死亡的角色
-    def dele_death_race(self, target):
-        x = target.x
-        y = target.y
-        if target in self.Action:
-            if target.ID == 1:
-                self.races_place[x][y] = ''
-            else:
-                self.enemy_place[x][y] = ''
-            self.Action.remove(target)
-
     def check_click(self, pos):
         x, y = pos
         x += self.viewport_offset[0]
@@ -436,14 +432,7 @@ class World:
         row = y // self.tile_size
 
         if 0 <= col < self.data.shape[1] and 0 <= row < self.data.shape[0] and self.data[row][col] != -1:
-            race = self.find_race(row, col)
-            if self.current_action not in ["move", "attack"] and race:  # 如果当前操作不是移动or攻击，并且当前位置有角色
-                if race.ID == 1:
-                    self.selected_race = [self.races_place[row][col], row, col, race.ID]  # 记录
-                else:
-                    self.selected_race = [self.enemy_place[row][col], row, col, race.ID]
-
-            if self.current_action == 'move' and self.races_place[row][col] == '' and self.enemy_place[row][col] == '':  # 点击瓦片没有角色
+            if self.current_action == 'move' and self.races_place[row][col] == '' and self.enemy_place[row][col] == '':
                 if (row, col) in self.selected_border_positions:  # 限制运动范围
                     selected_race_instance = self.Action[0]
                     old_x, old_y = selected_race_instance.x, selected_race_instance.y
@@ -461,11 +450,11 @@ class World:
                 target = self.find_race(row, col)
                 if isinstance(target, enemy.EnemyUnit):
                     damage = self.Action[0].attack(target)
-                    print(f"Attacked {target.ID} for {damage} damage")
+                    self.damage_show(damage, (x, y-self.tile_size))
 
                     if target.health <= 0:
-                        self.dele_death_race(target)
-                        print("target out")
+                        self.dying_race = target
+
                     self.draw_border = False
                     self.Action_change()
                     self.current_action = None  # 复位当前动作
@@ -481,7 +470,40 @@ class World:
             self.races_img[r.name] = pygame.transform.scale(pygame.image.load(r.img), (self.tile_size, self.tile_size))
         self.tile_size_old = self.tile_size
 
+    # 删除死亡的角色播放动画
+    def death_animation(self):
+        index = self.Action.index(self.dying_race)
+
+        if time.time() - self.late_time > 0.1 and self.death_animation_index + 1 == len(self.Action[index].death):
+            x = self.dying_race.x
+            y = self.dying_race.y
+
+            if self.dying_race in self.Action:
+                if self.dying_race.ID == 1:
+                    self.races_place[x][y] = ''
+                else:
+                    self.enemy_place[x][y] = ''
+                self.Action.remove(self.dying_race)
+
+            self.dying_race = None
+            self.death_animation_index = 0
+            self.late_time = time.time()
+            return
+
+        if time.time() - self.late_time > 0.1:
+            self.death_animation_index += 1
+            self.Action[index].img = self.Action[index].death[self.death_animation_index]
+            self.redraw_img()
+            self.late_time = time.time()
+
+    def damage_show(self, damage, pos):
+        damage_text = DamageText(damage, pos)
+        self.damage_texts.append(damage_text)
+
     def draw(self, viewport):
+        if self.dying_race:
+            self.death_animation()
+
         self.tile_list = []
 
         if self.tile_size_old != self.tile_size:
@@ -515,15 +537,24 @@ class World:
             if tile.race:
                 race = self.find_race(tile.type[1].y // self.tile_size, tile.type[1].x // self.tile_size)
                 viewport.blit(self.races_img[race.name], (tile_x, tile_y))
-                if self.selected_race is not None and [race.name, tile_y // self.tile_size,
-                                                       tile_x // self.tile_size] == self.selected_race:
-                    # 绘制选中边框
-                    pygame.draw.rect(viewport, (0, 255, 0), (tile_x, tile_y, self.tile_size, self.tile_size), 2)
             else:
                 viewport.blit(tile.type[0], (tile_x, tile_y))
 
+        mouse_pos = pygame.mouse.get_pos()
         # 鼠标所处位置加边框
-        self.add_border([self.border(pygame.mouse.get_pos())], viewport)
+        self.add_border([self.border(mouse_pos)], viewport)
+        if self.border(mouse_pos) and self.find_race(self.border(mouse_pos)[0], self.border(mouse_pos)[1]):
+            self.selected_race = self.find_race(self.border(mouse_pos)[0], self.border(mouse_pos)[1])
+        else:
+            self.selected_race = None
 
         if self.draw_border:
             self.add_border(self.selected_border_positions, viewport)
+
+        # 更新和绘制伤害文本
+        for damage_text in self.damage_texts:
+            damage_text.update()
+            damage_text.draw(viewport)
+
+        # 移除已经完全消失的伤害文本
+        self.damage_texts = [dt for dt in self.damage_texts if dt.alpha > 0]
