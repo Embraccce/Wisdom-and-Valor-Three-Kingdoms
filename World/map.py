@@ -368,9 +368,11 @@ class GameMap:
                 mask = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
                 mask.fill(TRANSPARENT_GRAY)
                 self.screen.blit(mask, (0, 0))
+                
+                # 绘制菜单图片
+                menu_image_rect = menu.get_rect(center=(WIDTH // 2 + 25, HEIGHT // 2))
+                self.screen.blit(menu, menu_image_rect.topleft)
 
-                # 在菜单区域绘制矩形框
-                pygame.draw.rect(self.screen, GREY, (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2))
                 self.menu.return_Button.display()
                 self.menu.continue_Button.display()
 

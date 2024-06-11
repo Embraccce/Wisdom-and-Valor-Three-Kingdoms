@@ -68,6 +68,10 @@ frame = pygame.image.load("res/imgs/frame.png")
 detail_bg = pygame.image.load("res/imgs/detail.png").convert()
 detail_bg = pygame.transform.scale(detail_bg,(WIDTH,HEIGHT))
 
+# 加载游戏菜单
+menu = pygame.image.load("res/imgs/menu.png").convert_alpha()
+menu = pygame.transform.scale(menu,(WIDTH/2+100,HEIGHT/2+100))
+
 # 示例角色信息
 # id,name,race,military,gender,personality_traits,character_story,health,magic,attack_power,magic_power,attack_range,physical_def,magic_def,speed,move,jump
 character_info = pd.read_csv("data/friendly_characters.csv")
