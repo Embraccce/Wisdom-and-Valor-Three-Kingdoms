@@ -140,10 +140,16 @@ class GameMap:
 
         if self.world.selected_race:
             race_info = self.world.selected_race[0]  # 当前选中角色的名称
+            for character in self.world.Action:
+                if self.world.selected_race[1] == character.x and self.world.selected_race[2] == character.y:
+                    race = character.race
+                    health = character.health
+
+
             info = [
                 f"名字: {race_info}",
-                f"种类: 类型",  # 可替换为实际的种类信息
-                "基础信息",  # 可替换为实际的基础信息
+                f"种族: {race}",  # 可替换为实际的种类信息
+                f"血量：{health}"  # 可替换为实际的基础信息
             ]
             for i, line in enumerate(info):
                 text = font.render(line, True, BLACK)
