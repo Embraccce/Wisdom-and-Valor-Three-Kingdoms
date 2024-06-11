@@ -417,6 +417,17 @@ class World:
         img_tile = (img, img_rect)
         self.tile_list.append(Lattice(img_tile, map_tile, 0, None, race))
 
+    # 删除死亡的角色
+    def dele_death_race(self, target):
+        x = target.x
+        y = target.y
+        if target in self.Action:
+            if target.ID == 1:
+                self.races_place[x][y] = ''
+            else:
+                self.enemy_place[x][y] = ''
+            self.Action.remove(target)
+
     def check_click(self, pos):
         x, y = pos
         x += self.viewport_offset[0]
@@ -451,9 +462,9 @@ class World:
                 if isinstance(target, enemy.EnemyUnit):
                     damage = self.Action[0].attack(target)
                     print(f"Attacked {target.ID} for {damage} damage")
-                    print(target.health)
+
                     if target.health <= 0:
-                        # 从当前地图and行动条中去掉
+                        self.dele_death_race(target)
                         print("target out")
                     self.draw_border = False
                     self.Action_change()
