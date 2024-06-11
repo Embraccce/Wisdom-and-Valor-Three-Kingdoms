@@ -5,6 +5,7 @@ import pickle
 from World.map import *
 from pygame.locals import *
 from init import *
+import textwrap
 
 clock = pygame.time.Clock()
 clock.tick(FPS)
@@ -93,13 +94,17 @@ class DetailPage:
             self.character_info = enemy_info
         elif self.type == 3:
             self.character_info = weapon_info
-        self.info = self.character_info[id]
+        self.info = self.get_info_by_id(id)
         self.WHITE = WHITE
         self.return_button = Button('返回', GREY, 10, 10, size=20)
         self.screen = pygame.display.set_mode(self.window_size)
         pygame.display.set_caption("图鉴详情")
         self.font = pygame.font.Font(font_path, 24)
-        self.small_font = pygame.font.Font(font_path, 18)
+        self.small_font = pygame.font.Font(font_path, 12)
+
+    def get_info_by_id(self, id_value):
+        # 通过布尔索引查找特定的 id
+        return self.character_info[self.character_info['id'] == id_value].iloc[0]
 
     def render(self):
         # 加载背景图
@@ -111,14 +116,22 @@ class DetailPage:
         title_surface = self.font.render(self.info["name"], True, BLACK)
         self.screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 10))
 
-        image = pygame.image.load(self.info["image"])
+        # 加载图片
+        if self.type == 1:
+            image_path = f"res/imgs/characters/{self.info['id']}.png"
+        elif self.type == 2:
+            image_path = f"res/imgs/enemies/{self.info['id']}.png"
+        elif self.type == 3:
+            image_path = f"res/imgs/weapons/{self.info['id']}.png"
+        image = pygame.image.load(image_path)
+
         image = pygame.transform.scale(image, (300, 300))
         self.screen.blit(image, (50, 80))
 
         x_offset = 400
         y_offset = 80
 
-        attributes = [key for key in self.info.keys() if key not in ["name", "image", "description"]]
+        attributes = [key for key in self.info.keys() if key not in ["name", "image", "personality_traits","character_story"]]
         for i in range(0, len(attributes), 2):
             attr1 = attributes[i]
             attr2 = attributes[i + 1] if i + 1 < len(attributes) else ""
@@ -126,30 +139,58 @@ class DetailPage:
             attr2_surface = self.small_font.render(f"{attr2}: {self.info[attr2]}", True, BLACK) if attr2 else None
             self.screen.blit(attr1_surface, (x_offset, y_offset))
             if attr2_surface:
-                self.screen.blit(attr2_surface, (x_offset + 200, y_offset))
+                self.screen.blit(attr2_surface, (x_offset + 300, y_offset))
             y_offset += 30
 
         # 显示描述信息
-        description = self.info.get("description", "")
-        lines = self.wrap_text(description, 50)
+        description = self.info.get("personality_traits", "")
+        # info_surface = self.small_font.render("人物性格：", True, BLACK)
+        # self.screen.blit(info_surface, (x_offset, y_offset))
+        # y_offset += 30
+        # lines = self.wrap_text(description, self.small_font, 2)  # Adjust the max width as needed
+        lines = textwrap.wrap(description, 41)
         for line in lines:
             info_surface = self.small_font.render(line, True, BLACK)
             self.screen.blit(info_surface, (x_offset, y_offset))
             y_offset += 30
 
+        # y_offset += 10
+
+        # 显示人物故事
+        story = self.info.get("character_story", "")
+        # info_surface = self.small_font.render("人物故事：", True, BLACK)
+        # self.screen.blit(info_surface, (x_offset, y_offset))
+        # y_offset += 30
+        # story_lines = self.wrap_text(story, self.small_font, 2)  # Adjust the max width as needed
+        story_lines = textwrap.wrap(story, 41)
+        for line in story_lines:
+            story_surface = self.small_font.render(line, True, BLACK)
+            self.screen.blit(story_surface, (x_offset, y_offset))
+            y_offset += 30
+
         pygame.display.flip()
 
-    def wrap_text(self, text, width):
-        words = text.split(' ')
+        pygame.display.flip()
+
+    def wrap_text(self, text, font, max_width):
+        words = text.split()
         lines = []
         current_line = ''
+        
         for word in words:
-            if self.small_font.size(current_line + ' ' + word)[0] <= width:
-                current_line += (' ' + word if current_line else word)
+            # Add a space if the current line is not empty
+            test_line = current_line + ' ' + word if current_line else word
+            # Calculate the width of the test line
+            line_width, _ = font.size(test_line)
+            if line_width <= max_width:
+                current_line = test_line
             else:
                 lines.append(current_line)
                 current_line = word
-        lines.append(current_line)
+        
+        if current_line:
+            lines.append(current_line)
+        
         return lines
 
     def handle_events(self):
@@ -278,9 +319,15 @@ class LibraryPage:
         self.buttons = []
         for i in range(self.columns * self.rows):
             if i < len(self.character_info):
-                info = self.character_info[i]
+                info = self.character_info.iloc[i]
                 button = LibraryButton(info["name"], PINK, 0, 0, self.width, self.height)
-                button.set_image(info["image"])
+                if self.type == 1:
+                    image_path = f"res/imgs/characters/{info['id']}.png"
+                elif self.type == 2:
+                    image_path = f"res/imgs/enemies/{info['id']}.png"
+                elif self.type == 3:
+                    image_path = f"res/imgs/weapons/{info['id']}.png"
+                button.set_image(image_path)
             else:
                 button = LibraryButton('', PINK, 0, 0, self.width, self.height)
             self.buttons.append(button)
@@ -315,11 +362,11 @@ class LibraryPage:
                             self.update_buttons()
                             return
                     # 如果点击到图鉴进入详情
-                        for button in self.buttons:
+                        for j, button in enumerate(self.buttons):
                             # 这里用text是否等于???来判定是否为空图鉴
                             if button.check_click(event.pos) and button.text:
                                 # 进入详情页
-                                detail_page = DetailPage(self.type, i, event_manager)
+                                detail_page = DetailPage(self.type, j + 1, event_manager)
                                 detail_page.run()
                                 #self.show_details(button.text)
                                 return

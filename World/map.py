@@ -6,6 +6,58 @@ from World.load_data import *
 import roles.ally_unit as ally
 import roles.enemy_unit as enemy
 
+# 按键类（菜单中的按钮）
+class Button(object):
+    def __init__(self, text, color, x=None, y=None, width=None, size = 36, height=None, **kwargs):
+        self.text = text
+        self.color = color
+        # 字体大小
+        self.font = pygame.font.Font(font_path, size)
+        self.surface = self.font.render(text, True, color)
+        self.width = width if width is not None else self.surface.get_width()
+        self.height = height if height is not None else self.surface.get_height()
+
+        if 'centered_x' in kwargs and kwargs['centered_x']:
+            self.x = WIDTH // 2 - self.width // 2
+        else:
+            self.x = x
+
+        if 'centered_y' in kwargs and kwargs['centered_y']:
+            self.y = HEIGHT // 2 - self.height // 2
+        else:
+            self.y = y
+
+    def display(self):
+        screen.blit(self.surface, (self.x + (self.width - self.surface.get_width()) // 2, self.y + (self.height - self.surface.get_height()) // 2))
+
+    def check_click(self, position):
+        x_match = self.x <= position[0] <= self.x + self.width
+        y_match = self.y <= position[1] <= self.y + self.height
+        return x_match and y_match
+
+# 菜单
+class Menu(object):
+    def __init__(self, event_manager):
+        self.continue_Button = Button("继续", WHITE, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
+        self.return_Button = Button("返回主页面", WHITE, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+        self.active = False
+        self.event_manager = event_manager
+
+    def continue_game(self):
+        self.active = False
+
+    def return_to_main_page(self):
+        self.active = False
+        self.event_manager.post("show_main_page", self.event_manager)
+
+
+    def handle_click(self, position):
+        if self.active:
+            if self.return_Button.check_click(position):
+                self.return_to_main_page()
+
+            elif self.continue_Button.check_click(position):
+                self.continue_game()
 
 class GameMap:
     def __init__(self, event_manager):
@@ -24,6 +76,9 @@ class GameMap:
 
         # 创建世界
         self.world = World()
+
+        # 创建菜单
+        self.menu = Menu(event_manager)
 
         self.dragging = False  # 是否在拖拽地图
         self.start_drag_pos = (0, 0)  # 拖拽位置
@@ -144,8 +199,7 @@ class GameMap:
                 if self.world.selected_race[1] == character.x and self.world.selected_race[2] == character.y:
                     race = character.race
                     health = character.health
-
-
+#################################   移动后要修改 TODO    ########################################
             info = [
                 f"名字: {race_info}",
                 f"种族: {race}",  # 可替换为实际的种类信息
@@ -222,10 +276,14 @@ class GameMap:
                 return False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.event_manager.post("show_main_page", self.event_manager)
+                    self.menu.active = True
+                    # self.event_manager.post("show_main_page", self.event_manager)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 if event.button == 1:  # 左键点击
+                    # 传递点击事件给菜单对象处理
+                    if self.menu.active:
+                        self.menu.handle_click(pygame.mouse.get_pos())
                     if any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
                         self.handle_button_click(pos)
                         self.mouse_pressed = True
@@ -303,9 +361,22 @@ class GameMap:
             self.action()
             if self.world.Action[0].ID == 2:
                 self.enemy_act()
+            
+            # 如果菜单激活，则绘制菜单
+            if self.menu.active:
+                # 创建一个透明的 Surface 作为遮罩
+                mask = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+                mask.fill(TRANSPARENT_GRAY)
+                self.screen.blit(mask, (0, 0))
 
+                # 在菜单区域绘制矩形框
+                pygame.draw.rect(self.screen, GREY, (WIDTH // 4, HEIGHT // 4, WIDTH // 2, HEIGHT // 2))
+                self.menu.return_Button.display()
+                self.menu.continue_Button.display()
+
+            # 处理事件并更新屏幕内容
             run = self.events()
-            pygame.display.update()  # 更新屏幕内容
+            pygame.display.update()
         pygame.quit()
 
 
