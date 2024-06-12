@@ -64,3 +64,4 @@ class AllyUnit(Unit):
             self.speed += 2
             self.move += 2
             self.attack_power += 10
+
