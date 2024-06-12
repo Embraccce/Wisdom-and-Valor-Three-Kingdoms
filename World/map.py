@@ -8,6 +8,7 @@ import roles.ally_unit as ally
 import roles.enemy_unit as enemy
 import time
 
+
 # 按键类（菜单中的按钮）
 class Button(object):
     def __init__(self, text, color, x=None, y=None, width=None, size = 36, height=None, **kwargs):
@@ -37,13 +38,15 @@ class Button(object):
         y_match = self.y <= position[1] <= self.y + self.height
         return x_match and y_match
 
+
 # 菜单
 class Menu(object):
-    def __init__(self, event_manager):
+    def __init__(self, event_manager, gamemap):
         self.continue_Button = Button("继续", WHITE, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
         self.return_Button = Button("返回主页面", WHITE, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
         self.active = False
         self.event_manager = event_manager
+        self.game_map = gamemap
 
     def continue_game(self):
         self.active = False
@@ -52,14 +55,15 @@ class Menu(object):
         self.active = False
         self.event_manager.post("show_main_page", self.event_manager)
 
-
     def handle_click(self, position):
         if self.active:
             if self.return_Button.check_click(position):
+                self.game_map.save_state()
                 self.return_to_main_page()
 
             elif self.continue_Button.check_click(position):
                 self.continue_game()
+
 
 class GameMap:
     def __init__(self, event_manager):
@@ -80,7 +84,7 @@ class GameMap:
         self.world = World()
 
         # 创建菜单
-        self.menu = Menu(event_manager)
+        self.menu = Menu(event_manager, self)
 
         self.dragging = False  # 是否在拖拽地图
         self.start_drag_pos = (0, 0)  # 拖拽位置
@@ -122,24 +126,20 @@ class GameMap:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         state = {
             "races_place": self.world.races_place,
-            "tile_size": self.world.tile_size,
-            "viewport_offset": self.world.viewport_offset,
+            "enemy_place": self.world.enemy_place,
+            "Action": self.world.Action
         }
         with open(filename, "wb") as f:
             pickle.dump(state, f)
-        print(f"Game state saved to {filename}")
 
     # 从文件加载状态
     def load_state(self, filename="save/game_state.pkl"):
         if os.path.exists(filename):
             with open(filename, "rb") as f:
                 state = pickle.load(f)
-            self.world.races_place = np.array(state["races_place"])
-            self.world.tile_size = state["tile_size"]
-            self.world.viewport_offset = state["viewport_offset"]
-            print(f"Game state loaded from {filename}")
-        else:
-            print(f"No save file found at {filename}")
+            self.world.races_place = state["races_place"]
+            self.world.enemy_place = state["enemy_place"]
+            self.world.Action = state["Action"]
 
     # 固定信息框
     def draw_fixed_info(self):
@@ -274,7 +274,6 @@ class GameMap:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.menu.active = True
-                    # self.event_manager.post("show_main_page", self.event_manager)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 if event.button == 1:  # 左键点击
@@ -315,18 +314,15 @@ class GameMap:
         for index, unit in enumerate(self.world.Action):
             # 计算头像的位置
             avatar_x = x
-            avatar_y = (total + unit.speed) / 2
-            total += avatar_y
+            avatar_y = total + unit.speed*2
+            total += unit.speed
 
             # 绘制头像
             self.screen.blit(self.races_img[unit.name], (avatar_x, avatar_y))
 
-
     # 按照进度条行动
     def action(self):
         # TODO: 进度条
-
-        self.world.Action[0]
         self.world.Action.sort(key=lambda unit: unit.speed)
 
         # 绘制带圆角的矩形框
@@ -363,7 +359,7 @@ class GameMap:
         self.menu.continue_Button.display()
 
     def run(self):
-        # self.load_state()
+        self.load_state()
         run = True
         while run:
             self.clock.tick(60)
@@ -428,9 +424,9 @@ class World:
         for x in range(self.races_place.shape[0]):
             for y in range(self.races_place.shape[1]):
                 if self.races_place[x][y]:
-                    self.Action.append(ally.AllyUnit(1, self.races_place[x][y], "精灵", "骑士", x, y))
+                    self.Action.append(ally.AllyUnit(1, self.races_place[x][y], race="精灵", unit_type="骑士", x=x, y=y))
                 elif self.enemy_place[x][y]:
-                    self.Action.append(enemy.EnemyUnit(2, self.enemy_place[x][y], "魔族", x, y))
+                    self.Action.append(enemy.EnemyUnit(2, self.enemy_place[x][y], race="魔族", x=x, y=y))
 
         self.selected_race = None
         self.late_time = 0

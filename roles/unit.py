@@ -30,7 +30,7 @@ class Unit:
 
     def attack(self, target):
         # 单位进行物理攻击的方法
-        damage = max(0, 100*(self.attack_power - target.physical_def))
+        damage = max(0, 10*(self.attack_power - target.physical_def))
         target.health -= damage
         return damage
 

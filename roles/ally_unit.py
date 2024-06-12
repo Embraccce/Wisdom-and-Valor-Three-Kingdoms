@@ -2,8 +2,8 @@ from roles.unit import Unit
 
 
 class AllyUnit(Unit):
-    def __init__(self, ID, name, race, unit_type, x, y):
-        super().__init__(ID, name, 70, 30, 25, 1, 3, 10, 10, 25, 5, 3)  # 基础设定
+    def __init__(self, ID, name, race, unit_type, x, y, health=70):
+        super().__init__(ID, name, health, 30, 25, 1, 3, 10, 10, 25, 5, 3)  # 基础设定
         self.race = race  # 种族属性
         self.unit_type = unit_type  # 兵种属性
         self.x = x
