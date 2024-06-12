@@ -11,7 +11,7 @@ import time
 
 # 按键类（菜单中的按钮）
 class Button(object):
-    def __init__(self, text, color, x=None, y=None, width=None, size = 36, height=None, **kwargs):
+    def __init__(self, text, color, x=None, y=None, width=None, size=36, height=None, **kwargs):
         self.text = text
         self.color = color
         # 字体大小
@@ -212,7 +212,6 @@ class GameMap:
     def draw_buttons(self):
         mouse_pos = pygame.mouse.get_pos()
         hover = False  # 用于检测是否悬浮在按钮上
-        hover = False  # 用于检测是否悬浮在按钮上
 
         for i, (button_name, button_rect) in enumerate(self.buttons.items()):
             # 按钮之间的间距
@@ -255,17 +254,19 @@ class GameMap:
                 self.button_shake[button_name] = 1  # 设置抖动次数
 
                 # TODO:怎么进行动作
-                if self.world.Action[0].ID == 1:
+                first_role = self.world.Action[0]
+                if first_role.ID == 1:
                     if button_name == "move" or button_name == "attack":
                         self.world.current_action = button_name
-                        self.world.border_positions(self.world.Action[0].x, self.world.Action[0].y,
+                        self.world.border_positions(first_role.x, first_role.y,
                                                     range_type=self.world.current_action)
                         self.world.add_border(self.world.selected_border_positions, self.screen)
                         self.world.draw_border = True
                     elif button_name == "skill":
-                        self.current_action = None
+                        self.world.current_action = None
                     elif button_name == "end":
-                        self.current_action = None
+                        first_role.action = 0
+                        self.world.Action_change()
 
     def events(self):
         for event in pygame.event.get():
@@ -309,20 +310,20 @@ class GameMap:
 
         return True
 
-    def draw_race_avatars(self, x, y, width):
-        total = y
+    def draw_race_avatars(self, ):
+        total = 50
+
         for index, unit in enumerate(self.world.Action):
             # 计算头像的位置
-            avatar_x = x
-            avatar_y = total + unit.speed*2
-            total += unit.speed
+            avatar_y = total
 
             # 绘制头像
-            self.screen.blit(self.races_img[unit.name], (avatar_x, avatar_y))
+            self.screen.blit(self.races_img[unit.name], (5, avatar_y))
+
+            total += unit.action*2
 
     # 按照进度条行动
     def action(self):
-        # TODO: 进度条
         self.world.Action.sort(key=lambda unit: unit.speed)
 
         # 绘制带圆角的矩形框
@@ -333,7 +334,7 @@ class GameMap:
 
         pygame.draw.rect(self.screen, BLACK, rect, width=2, border_radius=5)
 
-        self.draw_race_avatars(5, 50, 20)
+        self.draw_race_avatars()
 
         return 
 
@@ -443,8 +444,10 @@ class World:
         self.current_action = None
 
     def Action_change(self):
-        race = self.Action.pop(0)
-        self.Action.append(race)
+        if self.Action[0].action == 0:
+            race = self.Action.pop(0)
+            race.action = race.speed
+            self.Action.append(race)
 
     # 返回该瓦片上的角色
     def find_race(self, row, col):
@@ -535,7 +538,10 @@ class World:
                     selected_race_instance.y = col
 
                     self.draw_border = False
+                    # TODO:行动点行动一次减少
+                    self.Action[0].action -= 5
                     self.Action_change()
+
                     self.current_action = None  # 复位当前动作
 
             if self.current_action == "attack" and (row, col) in self.selected_border_positions:
