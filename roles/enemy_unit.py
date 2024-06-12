@@ -8,6 +8,8 @@ class EnemyUnit(Unit):
         self.race = race  # 种族属性
         self.x = x
         self.y = y
+        self.img = "res/imgs/six.png"
+
         # 根据种族修改属性
         if race == '魔族':
             self.speed += 15

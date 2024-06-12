@@ -8,6 +8,8 @@ class AllyUnit(Unit):
         self.unit_type = unit_type  # 兵种属性
         self.x = x
         self.y = y
+        self.img = "res/imgs/characters/1.png"
+
         # 根据种族修改属性
         if race == '长身人':
             self.speed += 10

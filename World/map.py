@@ -1,3 +1,5 @@
+import math
+
 import pygame.mouse
 from World.Damage import *
 import time
@@ -153,7 +155,11 @@ class GameMap:
         fixed_character_info = self.world.Action[i]
         while fixed_character_info.ID != 1:
             i += 1
-            fixed_character_info = self.world.Action[i]
+            if i < len(self.world.Action):
+                fixed_character_info = self.world.Action[i]
+            else:
+                fixed_character_info = None
+                break
 
         # 加载头像
         avatar_path = "res/imgs/characters/1.png"  # 头像路径，可以根据实际情况动态获取
@@ -164,14 +170,24 @@ class GameMap:
         self.screen.blit(avatar_img, (10, HEIGHT - 90))
 
         # 角色其他信息
-        info = [
-            f"名字: {fixed_character_info.name}",
-            f"种族: {fixed_character_info.race}",
-            f"物理攻击: {fixed_character_info.attack_power}",
-            f"物理防御: {fixed_character_info.physical_def}",
-            f"魔法攻击: {fixed_character_info.magic_power}",
-            f"魔法防御: {fixed_character_info.magic_def}"
-        ]
+        if fixed_character_info:
+            info = [
+                f"名字: {fixed_character_info.name}",
+                f"种族: {fixed_character_info.race}",
+                f"物理攻击: {fixed_character_info.attack_power}",
+                f"物理防御: {fixed_character_info.physical_def}",
+                f"魔法攻击: {fixed_character_info.magic_power}",
+                f"魔法防御: {fixed_character_info.magic_def}"
+            ]
+        else:
+            info = [
+                f"名字: 咩",
+                f"种族: 咩",
+                f"物理攻击: 咩",
+                f"物理防御: 咩",
+                f"魔法攻击: 咩",
+                f"魔法防御: 咩"
+            ]
 
         # 绘制角色信息（每列两个信息）
         for i, line in enumerate(info):
@@ -324,8 +340,6 @@ class GameMap:
 
     # 按照进度条行动
     def action(self):
-        self.world.Action.sort(key=lambda unit: unit.speed)
-
         # 绘制带圆角的矩形框
         rect = pygame.Rect(10, 50, 10, HEIGHT - 200)
 
@@ -336,9 +350,56 @@ class GameMap:
 
         self.draw_race_avatars()
 
-        return 
+        return
+
+    def find_closest_point(self, points, target):
+        x, y = target
+        min_distance = float('inf')
+        closest_point = None
+
+        for point in points:
+            if point:
+                xi, yi = point.x, point.y
+                distance = math.sqrt((x - xi) ** 2 + (y - yi) ** 2)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_point = point
+
+        return closest_point
 
     def enemy_act(self):
+        race = self.world.Action[0]
+        pos_enemy = (race.x, race.y)
+
+        # 攻击范围内的人
+        races_in_attack = []
+        closest_race = None
+        for pos in race.attack_border(race.x, race.y, self.world.data):
+            race_in_border = self.world.find_race(pos[0], pos[1])
+            if race_in_border:
+                if race_in_border.ID == 1:
+                    races_in_attack.append(race_in_border)
+
+        # 选择最近的人进行攻击
+        if len(races_in_attack):
+            target = self.find_closest_point(races_in_attack, pos_enemy)
+            if target:
+                size = self.world.tile_size
+                view = self.world.viewport_offset
+                self.world.damage_show(race.attack(target), ((target.y-1/2)*size-view[1], target.x*size-view[0]))
+                if target.health <= 0:
+                    self.world.dying_race = target
+        else:
+            # TODO:如果攻击范围内没有敌人
+            for ally in self.world.Action:
+                if ally.ID == 1:
+                    closest_race = self.find_closest_point([ally, closest_race], pos_enemy)
+            if closest_race:
+                print(f'{race.name}打不到别人，想打{closest_race.name}')
+            else:
+                print(f'亖干净了，{race.name}没人打了')
+
+
         self.world.Action_change()
 
     def show_menu(self):
@@ -359,6 +420,23 @@ class GameMap:
         self.menu.return_Button.display()
         self.menu.continue_Button.display()
 
+    def draw_info(self):
+        # 绘制固定角色信息
+        self.draw_fixed_info()
+        # 绘制当前选中角色信息
+        if self.world.selected_race:
+            self.draw_selected_info()
+
+        # 如果菜单激活，则绘制菜单
+        if self.menu.active:
+            # 创建一个透明的 Surface 作为遮罩
+            mask = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            mask.fill(TRANSPARENT_GRAY)
+            self.screen.blit(mask, (0, 0))
+
+            # 绘制菜单图片
+            self.show_menu()
+
     def run(self):
         self.load_state()
         run = True
@@ -366,25 +444,12 @@ class GameMap:
             self.clock.tick(60)
             self.screen.blit(self.cloud_img, (0, 0))
             self.world.draw(self.screen)
-            # 绘制固定角色信息
-            self.draw_fixed_info()
-            # 绘制当前选中角色信息
-            if self.world.selected_race:
-                self.draw_selected_info()
+
+            self.draw_info()
 
             self.action()
             if self.world.Action[0].ID == 2:
                 self.enemy_act()
-            
-            # 如果菜单激活，则绘制菜单
-            if self.menu.active:
-                # 创建一个透明的 Surface 作为遮罩
-                mask = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-                mask.fill(TRANSPARENT_GRAY)
-                self.screen.blit(mask, (0, 0))
-                
-                # 绘制菜单图片
-                self.show_menu()
 
             # 处理事件并更新屏幕内容
             run = self.events()
@@ -444,7 +509,11 @@ class World:
         self.current_action = None
 
     def Action_change(self):
-        if self.Action[0].action == 0:
+        if self.Action[0].ID == 2:
+            race = self.Action.pop(0)
+            self.Action.append(race)
+
+        if self.Action[0].action <= 0:
             race = self.Action.pop(0)
             race.action = race.speed
             self.Action.append(race)
@@ -539,7 +608,7 @@ class World:
 
                     self.draw_border = False
                     # TODO:行动点行动一次减少
-                    self.Action[0].action -= 5
+                    self.Action[0].action -= 25
                     self.Action_change()
 
                     self.current_action = None  # 复位当前动作
@@ -548,7 +617,7 @@ class World:
                 target = self.find_race(row, col)
                 if isinstance(target, enemy.EnemyUnit):
                     damage = self.Action[0].attack(target)
-                    self.damage_show(damage, (x, y-self.tile_size))
+                    self.damage_show(damage, (pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1]-self.tile_size/2))
 
                     if target.health <= 0:
                         self.dying_race = target

@@ -24,7 +24,7 @@ class DamageText:
 
     def draw(self, surface):
         if self.alpha > 0:
-            text_surface = self.font.render(self.damage, True, (0, 0, 0))
+            text_surface = self.font.render(self.damage, True, (255, 0, 0))
             text_surface.set_alpha(self.alpha)
-            surface.blit(text_surface, self.pos)
+            surface.blit(text_surface, (self.pos[0], self.pos[1]))
 
