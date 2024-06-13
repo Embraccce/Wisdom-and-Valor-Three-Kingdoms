@@ -68,7 +68,7 @@ class Menu(object):
 
 
 class GameMap:
-    def __init__(self, event_manager):
+    def __init__(self, level, event_manager):
         # 事件管理器
         self.late_time = 0
         self.type = None
@@ -84,7 +84,7 @@ class GameMap:
         self.cloud_img = pygame.transform.scale(self.cloud_img, (self.screen_width, self.screen_height))
 
         # 创建世界
-        self.world = World()
+        self.world = World(level)
 
         # 创建菜单
         self.menu = Menu(event_manager, self)
@@ -566,11 +566,12 @@ class GameMap:
 
 
 class World:
-    def __init__(self):
+    def __init__(self, level):
         # 地图数据
         self.damage_texts = []
-        self.data = load_map_data()
-        self.map_state = load_map_data()
+        self.file_path = f'res/files/level{level}.json'
+        self.data = load_map_data(self.file_path)
+        self.map_state = load_map_data(self.file_path)
 
         # 瓦片大小
         self.tile_size = 50
@@ -590,7 +591,7 @@ class World:
         # 瓦片列表
         self.tile_list = []
         # 地图瓦片上的角色
-        self.races_place, self.enemy_place = load_role_place(self.data.shape)
+        self.races_place, self.enemy_place = load_role_place(self.data.shape, self.file_path)
         self.races_img = {}
 
         # 行动表

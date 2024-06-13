@@ -97,7 +97,7 @@ class Button(object):
         y_match = self.y <= position[1] <= self.y + self.height
         return x_match and y_match
 
-# 关卡选择界面
+# 关卡选择界面 废案
 def choose_level(event_manager):
     # 绘制关卡选择界面图片
     screen.blit(bg, (0, 0))
@@ -140,6 +140,108 @@ def choose_level(event_manager):
                 if return_button.check_click(pygame.mouse.get_pos()):
                     event_manager.post("show_main_page", event_manager)
                     return
+
+# 关卡选择页面类
+class LevelSelectPage:
+    def __init__(self, event_manager):
+        self.event_manager = event_manager
+        self.window_width = WIDTH
+        self.window_height = HEIGHT
+        self.window_size = (WIDTH, HEIGHT)
+
+        self.width = 200  # 按钮宽度
+        self.height = 200  # 按钮高度
+        self.gap = 10  # 按钮之间的间隙
+        self.columns = 10  # 每行10个按钮
+        self.rows = 2  # 总共2行按钮
+
+        # 总共关卡数（这会决定显示多少个关卡！！）
+        self.levels = 1
+
+        self.return_button = Button('返回', GREY, 10, 10, size=20)
+
+        self.screen = pygame.display.set_mode(self.window_size)
+        pygame.display.set_caption("关卡选择")
+
+        self.update_buttons()
+
+        self.dragging = False
+        self.offset_x = 0
+        self.current_x = 0
+
+    def update_buttons(self):
+        self.buttons = []
+        for i in range(self.columns * self.rows):
+            # 如果有该关卡
+            if i <= self.levels - 1:
+                button = LibraryButton(f'关卡 {i+1}', PINK, 0, 0, self.width, self.height)
+            # 如果无该关卡
+            else :
+                button = LibraryButton(f'？？？', PINK, 0, 0, self.width, self.height)
+            self.buttons.append(button)
+
+    def handle_events(self, event_manager):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 4:
+                    self.current_x -= 10
+                elif event.button == 5:
+                    self.current_x += 10
+                if event.button == 1:
+                    if self.return_button.check_click(event.pos):
+                        home_page(event_manager)
+                        return
+                    # 点击关卡进入关卡详情
+                    for i, button in enumerate(self.buttons):
+                        # 如果当前存在点击到的关卡，则跳转关卡
+                        if button.check_click(event.pos) and i < self.levels:
+                            map = GameMap(i + 1, event_manager)
+                            # 播放战斗音乐
+                            global is_home_bgm_playing
+                            is_home_bgm_playing = False
+                            battle_bgm_thread = threading.Thread(target=play_battle_bgm_thread)
+                            battle_bgm_thread.start()
+                            # 进入关卡
+                            map.run()
+                            return
+
+    def check(self):
+        total_width = (len(self.buttons) // self.rows) * (self.width + self.gap)
+        self.current_x = min(0, max(-(total_width - self.window_width), self.current_x))
+
+    def render(self):
+        # 显示背景图
+        screen.blit(choose_bg, (0, 0))
+        # 显示返回
+        self.return_button.display()
+        # 显示关卡选择字体
+        title_surface = art_font.render("关卡选择", True, BLACK)
+        screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 20))
+
+        # 显示关卡图案
+        for i, button in enumerate(self.buttons):
+            self.check()
+            x = self.current_x + (i // self.rows) * (self.width + self.gap)
+            # 关卡y轴
+            y = 80 + (i % self.rows) * (self.height + self.gap)
+            button.move(x)
+            button.rect.y = y
+            button.display()
+
+        pygame.display.flip()
+        return
+
+    def run(self):
+        clock = pygame.time.Clock()
+
+        while True:
+            self.handle_events(self.event_manager)
+            self.render()
+            clock.tick(60)
 
 # 图鉴详情
 class DetailPage:
@@ -612,10 +714,12 @@ def home_page(event_manager):
                 raise SystemExit
             if pygame.mouse.get_pressed()[0]:
                 if game_level > 0 and continue_button.check_click(pygame.mouse.get_pos()):
-                    choose_level(event_manager)
+                    choose = LevelSelectPage(event_manager)
+                    choose.run()
                     return
                 if play_button.check_click(pygame.mouse.get_pos()):
-                    choose_level(event_manager)
+                    choose = LevelSelectPage(event_manager)
+                    choose.run()
                     return
                 if library_button.check_click(pygame.mouse.get_pos()):
                     library = LibraryPage(character_info, event_manager)

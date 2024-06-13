@@ -37,7 +37,7 @@ small_font = pygame.font.Font(font_path, 18)
 
 # 加载艺术字体文件
 art_path = "art.ttf"
-
+art_font = pygame.font.Font(art_path, 36)
 # 用户信息
 saved = 'usr.pkl'
 if not os.path.exists(saved):
@@ -56,7 +56,7 @@ bg = pygame.image.load("res/imgs/index.png").convert()
 bg = pygame.transform.scale(bg,(WIDTH, HEIGHT))
 
 # 加载选择关卡界面背景图
-choose_bg = pygame.image.load("res/imgs/index.png").convert()
+choose_bg = pygame.image.load("res/imgs/parchment.png").convert()
 choose_bg = pygame.transform.scale(choose_bg,(WIDTH,HEIGHT))
 
 # 加载图鉴界面背景图

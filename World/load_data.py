@@ -3,15 +3,15 @@ import json
 
 
 # 加载数据
-def load_map_data():
-    with open('res/files/test.json', 'r', encoding='utf-8') as file:
+def load_map_data(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
         data = json.load(file)
     data = np.array(data['mapgrid'])
     return data
 
 
-def load_role_place(shape):
-    with open('res/files/test.json', 'r', encoding='utf-8') as file:
+def load_role_place(shape, file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
         data = json.load(file)
 
     role_data = data['group1_friends']
