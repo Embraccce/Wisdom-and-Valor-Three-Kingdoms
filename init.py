@@ -30,6 +30,9 @@ PINK = (255, 182, 193)
 FPS = 60
 TRANSPARENT_GRAY = (128, 128, 128, 128)
 
+# 关卡
+LEVEL = 1
+
 # 加载宋体字体文件
 font_path = "simhei.ttf"  # 这里是你放置宋体字体文件的路径
 font = pygame.font.Font(font_path, 36)
@@ -60,7 +63,7 @@ choose_bg = pygame.image.load("res/imgs/parchment.png").convert()
 choose_bg = pygame.transform.scale(choose_bg,(WIDTH,HEIGHT))
 
 # 加载图鉴界面背景图
-library_bg = pygame.image.load("res/imgs/library.png").convert()
+library_bg = pygame.image.load("res/imgs/parchment.png").convert()
 library_bg = pygame.transform.scale(library_bg,(WIDTH,HEIGHT))
 
 # 加载图鉴默认图片
@@ -117,7 +120,7 @@ enemy_info = pd.read_csv("data/enemy_characters.csv")
 # 示例武器信息
 skill_info = pd.read_csv("data/friendly_characters.csv")
 buff_info = pd.read_csv("data/friendly_characters.csv")
-weapon_info = pd.read_csv("data/friendly_characters.csv")
+weapon_info = pd.read_csv("data/equip.csv")
 
 # weapon_info = [
 #     {"name": "武器1", "image": "res/imgs/characters/1.png"},

@@ -156,7 +156,7 @@ class LevelSelectPage:
         self.rows = 2  # 总共2行按钮
 
         # 总共关卡数（这会决定显示多少个关卡！！）
-        self.levels = 1
+        self.levels = LEVEL
 
         self.return_button = Button('返回', GREY, 10, 10, size=20)
 
@@ -175,6 +175,7 @@ class LevelSelectPage:
             # 如果有该关卡
             if i <= self.levels - 1:
                 button = LibraryButton(f'关卡 {i+1}', PINK, 0, 0, self.width, self.height)
+                button.set_image(f'res/imgs/levels/level{i+1}.png')
             # 如果无该关卡
             else :
                 button = LibraryButton(f'？？？', PINK, 0, 0, self.width, self.height)
@@ -263,8 +264,12 @@ class DetailPage:
         self.return_button = Button('返回', GREY, 10, 10, size=20)
         self.screen = pygame.display.set_mode(self.window_size)
         pygame.display.set_caption("图鉴详情")
-        self.font = pygame.font.Font(font_path, 24)
+
+        self.font = pygame.font.Font(art_path, 48)
         self.small_font = pygame.font.Font(font_path, 12)
+        if self.type == 3:
+            self.small_font = pygame.font.Font(font_path, 24)
+
 
     def get_info_by_id(self, id_value):
         # 通过布尔索引查找特定的 id
@@ -272,7 +277,7 @@ class DetailPage:
 
     def render(self):
         # 加载背景图
-        screen.blit(detail_bg, (0, 0))
+        screen.blit(library_bg, (0, 0))
 
         #self.screen.fill(self.WHITE)
 
@@ -295,44 +300,62 @@ class DetailPage:
         x_offset = 400
         y_offset = 80
 
-        attributes = [key for key in self.info.keys() if key not in ["name", "image", "personality_traits","character_story"]]
+        attributes = [key for key in self.info.keys() if key not in ["name", "image", "personality_traits","character_story", "description"]]
         for i in range(0, len(attributes), 2):
+            # 针对武器的property进行修改
             attr1 = attributes[i]
             attr2 = attributes[i + 1] if i + 1 < len(attributes) else ""
             attr1_surface = self.small_font.render(f"{attr1}: {self.info[attr1]}", True, BLACK)
             attr2_surface = self.small_font.render(f"{attr2}: {self.info[attr2]}", True, BLACK) if attr2 else None
+            
+            # 如果是property，就变成对应的属性
+            if attr1 == 'property1':
+                attr1_surface = self.small_font.render(f"{self.info[attr1]}: {self.info[attr2]}", True, BLACK)
+                attr2_surface = self.small_font.render(f"{self.info[attributes[i+2]]}: {self.info[attributes[i+3]]}", True, BLACK)
+            if attr1 == 'property2':
+                continue
+
             self.screen.blit(attr1_surface, (x_offset, y_offset))
             if attr2_surface:
                 self.screen.blit(attr2_surface, (x_offset + 300, y_offset))
             y_offset += 30
 
-        # 显示描述信息
-        description = self.info.get("personality_traits", "")
-        # info_surface = self.small_font.render("人物性格：", True, BLACK)
-        # self.screen.blit(info_surface, (x_offset, y_offset))
-        # y_offset += 30
-        # lines = self.wrap_text(description, self.small_font, 2)  # Adjust the max width as needed
-        lines = textwrap.wrap(description, 41)
-        for line in lines:
-            info_surface = self.small_font.render(line, True, BLACK)
-            self.screen.blit(info_surface, (x_offset, y_offset))
+        if self.type != 3:
+            # 显示描述信息
+            description = self.info.get("personality_traits", "")
+            # info_surface = self.small_font.render("人物性格：", True, BLACK)
+            # self.screen.blit(info_surface, (x_offset, y_offset))
+            # y_offset += 30
+            # lines = self.wrap_text(description, self.small_font, 2)  # Adjust the max width as needed
+            lines = textwrap.wrap(description, 41)
+            for line in lines:
+                info_surface = self.small_font.render(line, True, BLACK)
+                self.screen.blit(info_surface, (x_offset, y_offset))
+                y_offset += 30
+
+            # y_offset += 10
+
+            # 显示人物故事
+            story = self.info.get("character_story", "")
+            # info_surface = self.small_font.render("人物故事：", True, BLACK)
+            # self.screen.blit(info_surface, (x_offset, y_offset))
+            # y_offset += 30
+            # story_lines = self.wrap_text(story, self.small_font, 2)  # Adjust the max width as needed
+            story_lines = textwrap.wrap(story, 41)
+            for line in story_lines:
+                story_surface = self.small_font.render(line, True, BLACK)
+                self.screen.blit(story_surface, (x_offset, y_offset))
+                y_offset += 30
+
+        # 显示武器描述
+        if self.type == 3:
             y_offset += 30
-
-        # y_offset += 10
-
-        # 显示人物故事
-        story = self.info.get("character_story", "")
-        # info_surface = self.small_font.render("人物故事：", True, BLACK)
-        # self.screen.blit(info_surface, (x_offset, y_offset))
-        # y_offset += 30
-        # story_lines = self.wrap_text(story, self.small_font, 2)  # Adjust the max width as needed
-        story_lines = textwrap.wrap(story, 41)
-        for line in story_lines:
-            story_surface = self.small_font.render(line, True, BLACK)
-            self.screen.blit(story_surface, (x_offset, y_offset))
-            y_offset += 30
-
-        pygame.display.flip()
+            story = self.info.get("description", "")
+            story_lines = textwrap.wrap(story, 21)
+            for line in story_lines:
+                story_surface = self.small_font.render(line, True, BLACK)
+                self.screen.blit(story_surface, (x_offset, y_offset))
+                y_offset += 30
 
         pygame.display.flip()
 
@@ -380,7 +403,7 @@ class LibraryButton:
         # 该角色名字
         self.text = text
         # 框框颜色
-        self.color = color
+        # self.color = color
         self.rect = pygame.Rect(x, y, width, height)
         # 小字体
         self.font = pygame.font.Font(font_path, 18)
@@ -393,7 +416,7 @@ class LibraryButton:
     # 画图
     def display(self):
         # 绘制灰色矩形
-        pygame.draw.rect(screen, self.color, self.rect, border_radius=15)
+        # pygame.draw.rect(screen, self.color, self.rect, border_radius=15)
         
         # 绘制框框图片
         screen.blit(self.frame_image, (self.rect.x, self.rect.y))
@@ -678,6 +701,12 @@ def home_page(event_manager):
 
     event_manager.subscribe("show_main_page", show_home_page)
 ############################### 
+
+    # 显示标题
+     # 显示关卡选择字体
+    title_font = pygame.font.Font(art_path, 80)
+    title_surface = title_font.render("这是游戏标题", True, BLACK)
+    screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 80))
 
     while True:
         if game_level == 0:

@@ -9,6 +9,8 @@ from World.load_data import *
 import roles.ally_unit as ally
 import roles.enemy_unit as enemy
 import time
+import os
+import shutil
 import random
 
 # 按键类（菜单中的按钮）
@@ -40,7 +42,6 @@ class Button(object):
         y_match = self.y <= position[1] <= self.y + self.height
         return x_match and y_match
 
-
 # 菜单
 class Menu(object):
     def __init__(self, event_manager, gamemap):
@@ -66,7 +67,83 @@ class Menu(object):
             elif self.continue_Button.check_click(position):
                 self.continue_game()
 
+# 游戏结束显示
+class Over(object):
+    def __init__(self, event_manager,level, state):
+        # 重来按钮
+        self.restart_Button = Button("重新来过", WHITE, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
+        # 下一关按钮
+        self.next_Button = Button("下一关", WHITE, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
+        # 返回界面按钮
+        self.return_Button = Button("返回主页面", WHITE, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
 
+        self.event_manager = event_manager
+        # 当前关卡
+        self.level = level
+        # state = 1为胜利，= 2为失败
+        self.state = state
+        
+        # 胜利和失败显示
+        if self.state == 1:
+            self.title = 'Victory'
+        else:
+            self.title = 'Lose'
+
+    def restart_game(self):
+        map =GameMap(self.level, self.event_manager)
+        os.remove('save/game_state.pkl')
+        map.run()
+
+    def return_to_main_page(self):
+        self.event_manager.post("show_main_page", self.event_manager)
+
+    def next(self):
+        map =GameMap(self.level + 1, self.event_manager)
+        map.run()
+
+    def show(self):
+        # 显示胜利或失败
+        title_font = pygame.font.Font(art_path, 80)
+        title_surface =  title_font.render(self.title, True, BLACK)
+        screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 20))
+        
+        # 如果胜利
+        if self.state == 1:
+            # 如果是最后一关
+            if self.level == LEVEL:
+                text_surface =  art_font.render('恭喜冒险家，您已经走到了世界的尽头', True, BLACK)
+                screen.blit(text_surface, (WIDTH // 2 - title_surface.get_width() // 2, 220))
+            # 如果不是最后一关
+            else:
+                self.next_Button.display()
+            self.return_Button.display()
+        # 如果失败
+        else:
+            self.restart_Button.display()
+            self.return_Button.display()
+
+    def handle_click(self, position):
+        # 如果胜利
+        if self.state == 1:
+            # 如果不是最后一关
+            if self.level != LEVEL:
+                if self.next_Button.check_click(position):
+                    # 下一关
+                    return 1
+                    # self.next()
+        # 如果失败
+        else:
+            if self.restart_Button.check_click(position):
+                return 2
+                # self.restart_game()
+        # 返回主页
+        if self.return_Button.check_click(position):
+            return 3
+            # self.return_to_main_page()
+        return 0
+    
+
+# 战斗地图显示 
 class GameMap:
     def __init__(self, level, event_manager):
         # 事件管理器
@@ -79,6 +156,9 @@ class GameMap:
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.clock = pygame.time.Clock()
 
+        # 关卡数
+        self.level = level
+
         # 背景云层绘制
         self.cloud_img = pygame.image.load("res/imgs/backgroud.png").convert_alpha()
         self.cloud_img = pygame.transform.scale(self.cloud_img, (self.screen_width, self.screen_height))
@@ -89,8 +169,16 @@ class GameMap:
         # 创建菜单
         self.menu = Menu(event_manager, self)
 
+        # 创建结束菜单
+        self.over = Over(self.event_manager, self.level, 1)
+        # 结束标志
+        self.flag = 0
+
         self.dragging = False  # 是否在拖拽地图
         self.start_drag_pos = (0, 0)  # 拖拽位置
+
+        # 是否结束关卡
+        self.state = False
 
         # 角色信息框的位置和尺寸
         # 当前角色（固定在下方的）
@@ -367,7 +455,21 @@ class GameMap:
 
     def events(self):
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            # 如果显示了菜单
+            if self.menu.active:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        self.menu.handle_click(pygame.mouse.get_pos())
+            # 如果游戏结束
+            elif self.state == True:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        if self.over.handle_click(pygame.mouse.get_pos()) != 0:
+                            # 设定结束标识
+                            self.flag = self.over.handle_click(pygame.mouse.get_pos())
+                            # 退出循环
+                            return False
+            elif event.type == pygame.QUIT:
                 return False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -375,10 +477,7 @@ class GameMap:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 if event.button == 1:  # 左键点击
-                    # 传递点击事件给菜单对象处理
-                    if self.menu.active:
-                        self.menu.handle_click(pygame.mouse.get_pos())
-                    elif self.world.current_action == "skill":
+                    if self.world.current_action == "skill":
                         self.skill_button_click()
                     elif any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
                         self.handle_button_click(pos)
@@ -544,7 +643,25 @@ class GameMap:
 
             # 绘制菜单图片
             self.show_menu()
-
+    
+    # 如果只剩敌人或己方
+    def check_action(self):
+        has_ally_unit = any(isinstance(action, ally.AllyUnit) for action in self.world.Action)
+        has_enemy_unit = any(isinstance(action, enemy.EnemyUnit) for action in self.world.Action)
+        
+        # 如果没有己方角色了
+        if not has_ally_unit:
+            self.over = Over(self.event_manager, self.level, 2)
+            self.over.show()
+            # 关卡结束
+            self.state = True
+        # 如果胜利
+        if not has_enemy_unit:
+            self.over = Over(self.event_manager, self.level, 1)
+            self.over.show()
+            # 关卡结束
+            self.state = True
+    
     def run(self):
         self.load_state()
         run = True
@@ -559,12 +676,40 @@ class GameMap:
             if self.world.Action[0].ID == 2:
                 self.enemy_act()
 
-            # 处理事件并更新屏幕内容
-            run = self.events()
-            pygame.display.update()
+            # 检查关卡是否结束
+            self.check_action()
+
+            # 如果结束，则显示结束菜单并等待用户点击
+            while self.state:
+                # self.screen.blit(self.cloud_img, (0, 0))
+                # self.world.draw(self.screen)
+                # self.draw_info()
+                self.over.show()  # 显示结束菜单
+                pygame.display.update()
+                
+                # 处理事件并检查是否要退出结束状态
+                if not self.events():
+                    run = False
+                    break
+
+            # 如果没有进入结束状态，处理事件并更新屏幕内容
+            if run and not self.state:
+                run = self.events()
+                pygame.display.update()
+
+                # 处理事件并更新屏幕内容
+                run = self.events()
+                pygame.display.update()
+        # 如果退出循环
+        if self.flag == 1:
+            self.over.next()
+        elif self.flag == 2:
+            self.over.restart_game()
+        elif self.flag == 3:
+            self.over.return_to_main_page()
         pygame.quit()
 
-
+# 地图信息
 class World:
     def __init__(self, level):
         # 地图数据

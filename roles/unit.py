@@ -246,7 +246,7 @@ class Unit:
     def attack(self, target):
         # 单位进行物理攻击的方法
         damage = max(0, self.attack_power - target.physical_def)
-        target.health -= damage
+        target.health -= 100#damage
         return damage
 
     def in_attack_range(self, target):
