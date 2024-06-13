@@ -70,6 +70,7 @@ class Menu(object):
 class GameMap:
     def __init__(self, event_manager):
         # 事件管理器
+        self.late_time = 0
         self.type = None
         self.mouse_pressed = False
         self.event_manager = event_manager
@@ -278,6 +279,7 @@ class GameMap:
                                                     range_type=self.world.current_action)
                         self.world.add_border(self.world.selected_border_positions, self.screen)
                         self.world.draw_border = True
+                        self.late_time = time.time()
                     elif button_name == "skill":
                         self.world.current_action = None
                     elif button_name == "end":
@@ -368,58 +370,61 @@ class GameMap:
         return closest_point
 
     def enemy_act(self):
-        race = self.world.Action[0]
-        pos_enemy = (race.x, race.y)
+        if time.time() - self.late_time > 1:
+            race = self.world.Action[0]
+            pos_enemy = (race.x, race.y)
 
-        # 攻击范围内的人
-        races_in_attack = []
-        closest_race = None
-        for pos in race.attack_border(race.x, race.y, self.world.data):
-            race_in_border = self.world.find_race(pos[0], pos[1])
-            if race_in_border:
-                if race_in_border.ID == 1:
-                    races_in_attack.append(race_in_border)
+            # 攻击范围内的人
+            races_in_attack = []
+            closest_race = None
+            for pos in race.attack_border(race.x, race.y, self.world.data):
+                race_in_border = self.world.find_race(pos[0], pos[1])
+                if race_in_border:
+                    if race_in_border.ID == 1:
+                        races_in_attack.append(race_in_border)
 
-        # 选择最近的人进行攻击
-        if len(races_in_attack):
-            target = self.find_closest_point(races_in_attack, pos_enemy)
-            if target:
-                size = self.world.tile_size
-                view = self.world.viewport_offset
-                self.world.damage_show(race.attack(target), ((target.y-1/2)*size-view[1], target.x*size-view[0]))
-                if target.health <= 0:
-                    self.world.dying_race = target
-        else:
-            for ally in self.world.Action:
-                if ally.ID == 1:
-                    closest_race = self.find_closest_point([ally, closest_race], pos_enemy)
-            if closest_race:
-                print(f'{race.name}打不到别人，想打{closest_race.name}')
-
-                # 如果攻击范围内没有敌人，寻找最近的敌人并移动到可以攻击的位置
-                potential_positions = race.attack_border(closest_race.x, closest_race.y, self.world.data)
-                potential_positions = [pos for pos in potential_positions if
-                                       self.world.find_race(pos[0], pos[1]) is None]
-
-                # 检查potential_positions中确实可以移动到的位置
-                move_range = set(race.move_border(race.x, race.y, self.world.data))
-                move_positions = list(move_range & set(potential_positions))
-
-                if move_positions:
-                    # 随机移动到可以移动的其中一个位置
-                    move_to_pos = random.choice(move_positions)
-                    old_x, old_y = race.x, race.y
-                    race.x, race.y = move_to_pos[0], move_to_pos[1]
-                    self.world.enemy_place[old_x][old_y] = ''
-                    self.world.enemy_place[race.x][race.y] = race.name
-                    self.world.draw_border = False
-                    print(f'{race.name}移动到({race.x}, {race.y})准备攻击{closest_race.name}')
-                else:
-                    print(f'{race.name}找不到合适的位置进行攻击')
-                    # 结束当前回合
+            # 选择最近的人进行攻击
+            if len(races_in_attack):
+                target = self.find_closest_point(races_in_attack, pos_enemy)
+                if target:
+                    size = self.world.tile_size
+                    view = self.world.viewport_offset
+                    self.world.damage_show(race.attack(target), ((target.y-1/2)*size-view[0], (target.x-1/2)*size-view[1]))
+                    if target.health <= 0:
+                        self.world.dying_race = target
             else:
-                print(f'亖干净了，{race.name}没人打了')
-        self.world.Action_change()
+                for ally in self.world.Action:
+                    if ally.ID == 1:
+                        closest_race = self.find_closest_point([ally, closest_race], pos_enemy)
+                if closest_race:
+                    print(f'{race.name}打不到别人，想打{closest_race.name}')
+
+                    # 如果攻击范围内没有敌人，寻找最近的敌人并移动到可以攻击的位置
+                    potential_positions = race.attack_border(closest_race.x, closest_race.y, self.world.data)
+                    potential_positions = [pos for pos in potential_positions if
+                                           self.world.find_race(pos[0], pos[1]) is None]
+
+                    # 检查potential_positions中确实可以移动到的位置
+                    move_range = set(race.move_border(race.x, race.y, self.world.data))
+                    move_positions = list(move_range & set(potential_positions))
+
+                    if move_positions:
+                        # 随机移动到可以移动的其中一个位置
+                        move_to_pos = random.choice(move_positions)
+                        old_x, old_y = race.x, race.y
+                        race.x, race.y = move_to_pos[0], move_to_pos[1]
+                        self.world.enemy_place[old_x][old_y] = ''
+                        self.world.enemy_place[race.x][race.y] = race.name
+                        self.world.draw_border = False
+                        print(f'{race.name}移动到({race.x}, {race.y})准备攻击{closest_race.name}')
+                    else:
+                        print(f'{race.name}找不到合适的位置进行攻击')
+                        # 结束当前回合
+                else:
+                    print(f'亖干净了，{race.name}没人打了')
+
+            self.late_time = time.time()
+            self.world.Action_change()
 
     def show_menu(self):
         menu_image_rect = menu.get_rect(center=(WIDTH // 2 + 25, HEIGHT // 2))
@@ -608,6 +613,7 @@ class World:
         self.tile_list.append(Lattice(img_tile, map_tile, 0, None, race))
 
     def check_click(self, pos):
+        print(pygame.mouse.get_pos())
         x, y = pos
         x += self.viewport_offset[0]
         y += self.viewport_offset[1]
