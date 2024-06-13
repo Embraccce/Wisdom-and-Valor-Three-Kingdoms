@@ -97,6 +97,7 @@ class GameMap:
         self.fixed_info_rect = pygame.Rect(0, HEIGHT - 100, WIDTH, 100)
         # 点击到的角色
         self.selected_info_rect = pygame.Rect(WIDTH - 200, 0, 200, 150)
+        self.first_role = None
         
         # 定义按钮
         self.button_height = HEIGHT - 60
@@ -111,6 +112,7 @@ class GameMap:
             "end": pygame.draw.circle(self.screen, (128, 128, 128, 128),
                                       (WIDTH - 1 * 130, self.button_height), self.button_radius)
         }
+        self.skill_boxes = [pygame.Rect(400, 400, 200, 100), pygame.Rect(620, 400, 200, 100)]
 
         # 添加按钮抖动
         self.button_shake = {name: 0 for name in self.buttons.keys()}  # 按钮抖动状态
@@ -173,8 +175,7 @@ class GameMap:
         # 角色其他信息
         if fixed_character_info:
             info = [
-                f"名字: {fixed_character_info.name}",
-                f"种族: {fixed_character_info.race}",
+                f"{fixed_character_info.name}", "",
                 f"物理攻击: {fixed_character_info.attack_power}",
                 f"物理防御: {fixed_character_info.physical_def}",
                 f"魔法攻击: {fixed_character_info.magic_power}",
@@ -182,8 +183,7 @@ class GameMap:
             ]
         else:
             info = [
-                f"名字: 咩",
-                f"种族: 咩",
+                f"咩???", "",
                 f"物理攻击: 咩",
                 f"物理防御: 咩",
                 f"魔法攻击: 咩",
@@ -199,10 +199,11 @@ class GameMap:
             y_pos = HEIGHT - 90 + row * 20
             self.screen.blit(text, (x_pos, y_pos))
 
-        # 绘制按钮
-        self.draw_buttons()
+        if self.world.current_action != "skill":
+            # 绘制按钮
+            self.draw_buttons()
 
-    # 点击显示信息框
+    # 鼠标悬浮显示信息框
     def draw_selected_info(self):
         # 创建一个 Surface 对象作为信息框背景
         info_bg = pygame.Surface((200, 100), pygame.SRCALPHA)
@@ -225,6 +226,83 @@ class GameMap:
         self.mouse_pressed = False  # 用于跟踪鼠标按钮的状态
 
         self.type = None
+
+    def wrap_text(self, text, font, max_width):
+        lines = []
+        current_line = []
+
+        for word in text:
+            current_line.append(word)
+            if font.size(''.join(current_line))[0] > max_width:
+                current_line.pop()
+                lines.append(''.join(current_line))
+                current_line = [word]
+
+        if current_line:
+            lines.append(''.join(current_line))
+
+        return lines
+
+    def draw_skills_info(self):
+        info_bg = pygame.Surface((220, 100), pygame.SRCALPHA)
+        info_bg.fill((0, 0, 0, 0))  # 半透明灰色背景
+
+        positions = [WIDTH-620, WIDTH-380]
+        for pos in positions:
+            index = positions.index(pos)
+            # 绘制圆角矩形
+            pygame.draw.rect(info_bg, (128, 128, 128, 128), info_bg.get_rect(), border_radius=15)
+
+            self.screen.blit(info_bg, (pos, HEIGHT-100))  # 将半透明背景绘制到屏幕上
+            font = pygame.font.Font(font_path, 16)
+
+            if self.first_role.skills[index]['time1']:
+                info = [f"{self.first_role.skills[index]['name']}"
+                        f"     持续回合:{self.first_role.skills[index]['time1']}",
+                        f"目标：{self.first_role.skills[index]['target']}        伤害类型:{self.first_role.skills[index]['type']}",
+                        f"{self.first_role.skills[index]['description']}"]
+            else:
+                info = [f"{self.first_role.skills[index]['name']}",
+                        f"目标：{self.first_role.skills[index]['target']}        伤害类型:{self.first_role.skills[index]['type']}",
+                        f"{self.first_role.skills[index]['description']}"]
+
+            height = HEIGHT-117
+            for i, line in enumerate(info):
+                if i == 2:
+                    font_dis = pygame.font.Font(font_path, 10)
+                    wrapped_lines = self.wrap_text(line, font_dis, 200)
+                    for wrapped_line in wrapped_lines:
+                        text = font_dis.render(wrapped_line, True, BLACK)
+                        height += 20
+                        self.screen.blit(text, (pos + 10, height))
+                else:
+                    if i == 1:
+                        text = pygame.font.Font(font_path, 10).render(line, True, BLACK)
+                    else:
+                        text = font.render(line, True, BLACK)
+
+                    height += 20
+                    self.screen.blit(text, (pos + 10, height))
+
+        # 绘制灰色圆形背景
+        pygame.draw.circle(self.screen, (128, 128, 128, 128), (WIDTH-100, HEIGHT-50), self.button_radius)
+        # 绘制按钮文字
+        text = pygame.font.Font(font_path, 24).render("返回", True, BLACK)
+        text_rect = text.get_rect(center=(WIDTH-100, HEIGHT-50))
+        self.screen.blit(text, text_rect)
+
+    def skill_button_click(self):
+        mouse_pos = pygame.mouse.get_pos()
+        distance = ((mouse_pos[0] - (WIDTH-100)) ** 2 + (mouse_pos[1] - (HEIGHT-50)) ** 2) ** 0.5
+
+        if distance <= self.button_radius:  # 返回
+            self.world.current_action = None
+        else:  # 技能
+            for i, rect in enumerate(self.skill_boxes):
+                if rect.collidepoint(mouse_pos) and i == 0:
+                    print("使用技能1！")
+                if rect.collidepoint(mouse_pos) and i == 1:
+                    print("使用技能2！")
 
     def draw_buttons(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -271,19 +349,20 @@ class GameMap:
                 self.button_shake[button_name] = 1  # 设置抖动次数
 
                 # TODO:怎么进行动作
-                first_role = self.world.Action[0]
-                if first_role.ID == 1:
+                self.first_role = self.world.Action[0]
+                if self.first_role.ID == 1:
                     if button_name == "move" or button_name == "attack":
                         self.world.current_action = button_name
-                        self.world.border_positions(first_role.x, first_role.y,
+                        self.world.border_positions(self.first_role.x, self.first_role.y,
                                                     range_type=self.world.current_action)
                         self.world.add_border(self.world.selected_border_positions, self.screen)
                         self.world.draw_border = True
                         self.late_time = time.time()
                     elif button_name == "skill":
-                        self.world.current_action = None
+                        self.world.current_action = button_name
+                        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
                     elif button_name == "end":
-                        first_role.action = 0
+                        self.first_role.action = 0
                         self.world.Action_change()
 
     def events(self):
@@ -299,7 +378,9 @@ class GameMap:
                     # 传递点击事件给菜单对象处理
                     if self.menu.active:
                         self.menu.handle_click(pygame.mouse.get_pos())
-                    if any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
+                    elif self.world.current_action == "skill":
+                        self.skill_button_click()
+                    elif any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
                         self.handle_button_click(pos)
                         self.mouse_pressed = True
                     else:
@@ -451,6 +532,9 @@ class GameMap:
         if self.world.selected_race:
             self.draw_selected_info()
 
+        if self.world.current_action == "skill":
+            self.draw_skills_info()
+
         # 如果菜单激活，则绘制菜单
         if self.menu.active:
             # 创建一个透明的 Surface 作为遮罩
@@ -514,9 +598,9 @@ class World:
         for x in range(self.races_place.shape[0]):
             for y in range(self.races_place.shape[1]):
                 if self.races_place[x][y]:
-                    self.Action.append(ally.AllyUnit(1, self.races_place[x][y], race="精灵", unit_type="骑士", x=x, y=y))
+                    self.Action.append(ally.AllyUnit(1, self.races_place[x][y], x=x, y=y))
                 elif self.enemy_place[x][y]:
-                    self.Action.append(enemy.EnemyUnit(2, self.enemy_place[x][y], race="魔族", x=x, y=y))
+                    self.Action.append(enemy.EnemyUnit(2, self.enemy_place[x][y], x=x, y=y))
 
         self.selected_race = None
         self.late_time = 0
@@ -613,7 +697,6 @@ class World:
         self.tile_list.append(Lattice(img_tile, map_tile, 0, None, race))
 
     def check_click(self, pos):
-        print(pygame.mouse.get_pos())
         x, y = pos
         x += self.viewport_offset[0]
         y += self.viewport_offset[1]
