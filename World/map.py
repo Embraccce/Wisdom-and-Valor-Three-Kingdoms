@@ -37,7 +37,8 @@ class Button(object):
 
     def display(self):
         screen.blit(self.surface, (
-        self.x + (self.width - self.surface.get_width()) // 2, self.y + (self.height - self.surface.get_height()) // 2))
+            self.x + (self.width - self.surface.get_width()) // 2,
+            self.y + (self.height - self.surface.get_height()) // 2))
 
     def check_click(self, position):
         x_match = self.x <= position[0] <= self.x + self.width
@@ -242,6 +243,31 @@ class GameMap:
             self.world.enemy_place = state["enemy_place"]
             self.world.Action = state["Action"]
 
+    def draw_health_bar(self, character_info, x, y):
+        # 计算生命值百分比
+        health_percentage = character_info.health / character_info.max_health
+        bar_length = int(health_percentage * 196)  # 计算生命条长度, 预留4像素间距
+
+        # 绘制生命条背景
+        pygame.draw.rect(self.screen, BLACK, (x, y, 200, 20))
+
+        # 根据健康百分比选择颜色
+        if health_percentage > 0.6:
+            bar_color = (0, 255, 0)
+        elif health_percentage > 0.3:
+            bar_color = (255, 165, 0)
+        else:
+            bar_color = (255, 0, 0)
+
+        # 绘制生命条
+        pygame.draw.rect(self.screen, bar_color, (x + 2, y + 2, bar_length, 16))
+
+        # 绘制生命值文本
+        font = pygame.font.Font(font_path, 14)
+        health_text = f"{character_info.health}/{character_info.max_health}"
+        text = font.render(health_text, True, BLACK)
+        self.screen.blit(text, (x + 210, y))
+
     # 固定信息框
     def draw_fixed_info(self):
         pygame.draw.rect(self.screen, WHITE, self.fixed_info_rect)
@@ -299,6 +325,10 @@ class GameMap:
             # 绘制按钮
             self.draw_buttons()
 
+        # 绘制生命条
+        if fixed_character_info:
+            self.draw_health_bar(fixed_character_info, 70, HEIGHT - 30)
+
     # 鼠标悬浮显示信息框
     def draw_selected_info(self):
         # 创建一个 Surface 对象作为信息框背景
@@ -314,7 +344,9 @@ class GameMap:
             info = [
                 f"名字: {race_info.name}",
                 f"种类: 类型",  # 可替换为实际的种类信息
-                f"血量： {race_info.health}"]  # 可替换为实际的基础信息
+                f"血量： {race_info.health}",  # 可替换为实际的基础信息
+                f"魔法： {race_info.magic}"]  # 可替换为实际的基础信息
+
             for i, line in enumerate(info):
                 text = font.render(line, True, BLACK)
                 self.screen.blit(text, (WIDTH - 190, 10 + i * 20))

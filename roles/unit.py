@@ -3,8 +3,10 @@ class Unit:
                  move, jump):
         self.ID = ID  # 单位编号ID
         self.name = name  # 单位名称
-        self.health = health  # 生命值
-        self.magic = magic  # 魔力值
+        self.health = health  # 当前生命值
+        self.max_health = health # 最大的生命值
+        self.magic = magic  # 当前魔力值
+        self.max_magic = magic # 最大的魔力
         self.attack_power = attack_power  # 物理攻击力
         self.magic_power = magic_power  # 魔法攻击力
         self.attack_range = attack_range  # 攻击距离
@@ -259,7 +261,8 @@ class Unit:
     def attack(self, target, multiplier=1):
         # 单位进行物理攻击的方法
         damage = max(0, self.attack_power - target.physical_def)
-        target.health -= 85*multiplier  # damage
+        #target.health -= 85*multiplier  # damage
+        target.health -= 20  # damage
         return damage
 
     def in_attack_range(self, target):
