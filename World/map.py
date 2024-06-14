@@ -243,30 +243,45 @@ class GameMap:
             self.world.enemy_place = state["enemy_place"]
             self.world.Action = state["Action"]
 
-    def draw_health_bar(self, character_info, x, y):
+    def draw_bars(self, character_info, x, y):
         # 计算生命值百分比
         health_percentage = character_info.health / character_info.max_health
-        bar_length = int(health_percentage * 196)  # 计算生命条长度, 预留4像素间距
+        health_bar_length = int(health_percentage * 196)  # 计算生命条长度
 
         # 绘制生命条背景
-        pygame.draw.rect(self.screen, BLACK, (x, y, 200, 20))
+        pygame.draw.rect(self.screen, BLACK, (x, y, 200, 24))
 
         # 根据健康百分比选择颜色
         if health_percentage > 0.6:
-            bar_color = (0, 255, 0)
+            health_bar_color = (0, 255, 0)
         elif health_percentage > 0.3:
-            bar_color = (255, 165, 0)
+            health_bar_color = (255, 165, 0)
         else:
-            bar_color = (255, 0, 0)
+            health_bar_color = (255, 0, 0)
 
         # 绘制生命条
-        pygame.draw.rect(self.screen, bar_color, (x + 2, y + 2, bar_length, 16))
+        pygame.draw.rect(self.screen, health_bar_color, (x + 2, y + 2, health_bar_length, 20))
 
         # 绘制生命值文本
-        font = pygame.font.Font(font_path, 14)
+        font = pygame.font.Font(font_path, 16)
         health_text = f"{character_info.health}/{character_info.max_health}"
-        text = font.render(health_text, True, BLACK)
-        self.screen.blit(text, (x + 210, y))
+        health_text_surf = font.render(health_text, True, BLACK)
+        self.screen.blit(health_text_surf, (x + 210, y))
+
+        # 计算魔力值百分比
+        magic_percentage = character_info.magic / character_info.max_magic
+        magic_bar_length = int(magic_percentage * 196)  # 计算魔力条长度
+
+        # 绘制魔力条背景
+        pygame.draw.rect(self.screen, BLACK, (x, y + 30, 200, 24))
+
+        # 绘制魔力条
+        pygame.draw.rect(self.screen, (0, 0, 255), (x + 2, y + 32, magic_bar_length, 20))
+
+        # 绘制魔力值文本
+        magic_text = f"{character_info.magic}/{character_info.max_magic}"
+        magic_text_surf = font.render(magic_text, True, BLACK)
+        self.screen.blit(magic_text_surf, (x + 210, y + 30))
 
     # 固定信息框
     def draw_fixed_info(self):
@@ -298,18 +313,18 @@ class GameMap:
         if fixed_character_info:
             info = [
                 f"{fixed_character_info.name}", "",
-                f"物理攻击: {fixed_character_info.attack_power}",
-                f"物理防御: {fixed_character_info.physical_def}",
-                f"魔法攻击: {fixed_character_info.magic_power}",
-                f"魔法防御: {fixed_character_info.magic_def}"
+                # f"物理攻击: {fixed_character_info.attack_power}",
+                # f"物理防御: {fixed_character_info.physical_def}",
+                # f"魔法攻击: {fixed_character_info.magic_power}",
+                # f"魔法防御: {fixed_character_info.magic_def}"
             ]
         else:
             info = [
                 f"咩???", "",
-                f"物理攻击: 咩",
-                f"物理防御: 咩",
-                f"魔法攻击: 咩",
-                f"魔法防御: 咩"
+                # f"物理攻击: 咩",
+                # f"物理防御: 咩",
+                # f"魔法攻击: 咩",
+                # f"魔法防御: 咩"
             ]
 
         # 绘制角色信息（每列两个信息）
@@ -327,12 +342,12 @@ class GameMap:
 
         # 绘制生命条
         if fixed_character_info:
-            self.draw_health_bar(fixed_character_info, 70, HEIGHT - 30)
+            self.draw_bars(fixed_character_info, 70, HEIGHT - 70)
 
     # 鼠标悬浮显示信息框
     def draw_selected_info(self):
         # 创建一个 Surface 对象作为信息框背景
-        info_bg = pygame.Surface((200, 100), pygame.SRCALPHA)
+        info_bg = pygame.Surface((200, 180), pygame.SRCALPHA)
         info_bg.fill((128, 128, 128, 128))  # 半透明灰色背景
         self.screen.blit(info_bg, (WIDTH - 200, 0))  # 将半透明背景绘制到屏幕上
 
@@ -345,7 +360,11 @@ class GameMap:
                 f"名字: {race_info.name}",
                 f"种类: 类型",  # 可替换为实际的种类信息
                 f"血量： {race_info.health}",  # 可替换为实际的基础信息
-                f"魔法： {race_info.magic}"]  # 可替换为实际的基础信息
+                f"魔法： {race_info.magic}",  # 可替换为实际的基础信息
+                f"物理攻击: {race_info.attack_power}",
+                f"物理防御: {race_info.physical_def}",
+                f"魔法攻击: {race_info.magic_power}",
+                f"魔法防御: {race_info.magic_def}"]
 
             for i, line in enumerate(info):
                 text = font.render(line, True, BLACK)
@@ -494,6 +513,9 @@ class GameMap:
                         self.world.current_action = button_name
                         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
                     elif button_name == "end":
+                        self.world.draw_border = False
+                        self.world.selected_border_positions.clear()
+
                         self.first_role.action = 0
                         self.world.Action_change()
 
