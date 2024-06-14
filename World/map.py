@@ -3,6 +3,8 @@ import math
 import pygame.mouse
 from World.Damage import *
 import time
+
+from World.dialogue import Dialogue
 from init import *
 from World.Lattice import *
 from World.load_data import *
@@ -223,6 +225,17 @@ class GameMap:
         # 用于判断当前是attack还是move
         self.current_action = None
 
+        # 对话剧情
+        self.dialogues = Dialogue([
+            "莱欧斯冒险小队站在通往迷宫的必经之路上，前方的矮人战士和人类魔法师因为宝藏分配问题大打出手。矮人战士挥舞着他的战斧，人类魔法师则不断施放火球。如果不阻止他们的战斗，整个队伍将无法在最佳时机进入迷宫。",
+            ("矮人战士（葛瑞格）", "你这家伙想要独吞宝藏！我绝不允许！"),
+            ("人类魔法师（艾尔文）", "是你贪得无厌，葛瑞格。我们早该平分的。"),
+            ("莱欧斯", "你们两个再打下去，只会让我们失去错失进入迷宫的最佳时机！"),
+            ("葛瑞格", "哼，我管不了那么多，先教训这个自大的法师再说！"),
+            ("艾尔文", "我倒要看看你的能耐。"),
+            ("旁白", "莱欧斯劝说无果，唯有打断他们的战斗，才能进入迷宫。")
+        ], WIDTH, HEIGHT)
+
     def save_state(self, filename="save/game_state.pkl"):
         # 确保保存目录存在
         os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -263,10 +276,11 @@ class GameMap:
         pygame.draw.rect(self.screen, health_bar_color, (x + 2, y + 2, health_bar_length, 20))
 
         # 绘制生命值文本
-        font = pygame.font.Font(font_path, 16)
+        font = pygame.font.Font(font_path, 20)
         health_text = f"{character_info.health}/{character_info.max_health}"
         health_text_surf = font.render(health_text, True, BLACK)
-        self.screen.blit(health_text_surf, (x + 210, y))
+        health_text_rect = health_text_surf.get_rect(center=(x + 210 + health_text_surf.get_width() // 2, y + 12))
+        self.screen.blit(health_text_surf, health_text_rect.topleft)
 
         # 计算魔力值百分比
         magic_percentage = character_info.magic / character_info.max_magic
@@ -281,7 +295,8 @@ class GameMap:
         # 绘制魔力值文本
         magic_text = f"{character_info.magic}/{character_info.max_magic}"
         magic_text_surf = font.render(magic_text, True, BLACK)
-        self.screen.blit(magic_text_surf, (x + 210, y + 30))
+        magic_text_rect = magic_text_surf.get_rect(center=(x + 210 + magic_text_surf.get_width() // 2, y + 42))
+        self.screen.blit(magic_text_surf, magic_text_rect.topleft)
 
     # 固定信息框
     def draw_fixed_info(self):
@@ -736,16 +751,19 @@ class GameMap:
     def run(self):
         self.load_state()
         run = True
+        dialogue_index = 0
         while run:
             self.clock.tick(60)
             self.screen.blit(self.cloud_img, (0, 0))
             self.world.draw(self.screen)
 
-            self.draw_info()
-
-            self.action()
-            if self.world.Action[0].ID == 2:
-                self.enemy_act()
+            if not self.dialogues.is_finished():
+                self.dialogues.draw(self.screen)
+            else:
+                self.draw_info()
+                self.action()
+                if self.world.Action[0].ID == 2:
+                    self.enemy_act()
 
             # 检查关卡是否结束
             self.check_action()
@@ -762,6 +780,16 @@ class GameMap:
                 if not self.events():
                     run = False
                     break
+
+            # 处理事件并更新屏幕内容
+            if not self.dialogues.is_finished():
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        run = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_RETURN:
+                            if not self.dialogues.is_finished():
+                                self.dialogues.next()
 
             # 如果没有进入结束状态，处理事件并更新屏幕内容
             if run and not self.state:
