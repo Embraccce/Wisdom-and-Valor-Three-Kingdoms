@@ -927,7 +927,10 @@ class World:
                 target = self.find_race(row, col)
                 if isinstance(target, enemy.EnemyUnit):
                     if self.using_skill == '冰封之环':
+                        self.damage_show(self.Action[0].attack(target, self.Action[0].skills[0]['multiplier']),
+                                         (x, y - self.tile_size / 2))
                         target.ice(1)
+                        self.check_health(target)
                     elif self.using_skill == '魔力冲击':
                         self.damage_show(self.Action[0].attack(target, self.Action[0].skills[1]['multiplier']),
                                          (x, y - self.tile_size / 2))
