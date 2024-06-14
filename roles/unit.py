@@ -19,6 +19,8 @@ class Unit:
         self.y = None  # 所在y轴
         self.action = self.speed  # 行动值
 
+        self.state = {}  # 状态
+
         if name == "莱欧斯":
             self.skills = [{
                 'name': '坚韧之盾',
@@ -236,8 +238,16 @@ class Unit:
             ]
 
     def act(self):
-        # 更新单位的行动时间
-        self.action_time += 100 / self.speed
+        if 'ice' in self.state and self.state['ice'] > 0:
+            self.state['ice'] -= 1
+            if self.state['ice'] == 0:
+                self.state.pop('ice')
+            return False
+        return True
+
+    def ice(self, num):
+        # 一回合不能动
+        self.state['ice'] = num
 
     def move_to(self, target):
         # 单位移动的方法，具体逻辑待实现

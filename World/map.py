@@ -90,8 +90,12 @@ class Over(object):
             self.title = 'Lose'
 
     def restart_game(self):
-        map =GameMap(self.level, self.event_manager)
-        os.remove('save/game_state.pkl')
+        map = GameMap(self.level, self.event_manager)
+        save_path = 'save/game_state.pkl'
+
+        if os.path.exists(save_path):
+            os.remove(save_path)
+
         map.run()
 
     def return_to_main_page(self):
@@ -381,16 +385,34 @@ class GameMap:
 
     def skill_button_click(self):
         mouse_pos = pygame.mouse.get_pos()
-        distance = ((mouse_pos[0] - (WIDTH-100)) ** 2 + (mouse_pos[1] - (HEIGHT-50)) ** 2) ** 0.5
+        distance = ((mouse_pos[0] - (WIDTH - 100)) ** 2 + (mouse_pos[1] - (HEIGHT - 50)) ** 2) ** 0.5
 
         if distance <= self.button_radius:  # 返回
             self.world.current_action = None
+            self.world.selected_border_positions = []
+            self.world.draw_border = True
         else:  # 技能
             for i, rect in enumerate(self.skill_boxes):
                 if rect.collidepoint(mouse_pos) and i == 0:
-                    print("使用技能1！")
+                    if self.first_role.skills[0]['name'] == '冰封之环':
+                        self.world.border_positions(self.first_role.x, self.first_role.y,
+                                                    self.first_role.skills[i]['scope'],
+                                                    range_type=self.world.current_action)
+                        self.world.using_skill = '冰封之环'
+                        self.world.draw_border = True
+                        print(f'冰封之环')
+                    else:
+                        self.world.border_positions(self.first_role.x, self.first_role.y,
+                                                    self.first_role.skills[i]['scope'],
+                                                    range_type=self.world.current_action)
+                        self.world. using_skill = '其他'
+                        self.world.draw_border = True
                 if rect.collidepoint(mouse_pos) and i == 1:
-                    print("使用技能2！")
+                    self.world.border_positions(self.first_role.x, self.first_role.y,
+                                                self.first_role.skills[i]['scope'],
+                                                range_type=self.world.current_action)
+                    self.world.using_skill = '其他'
+                    self.world.draw_border = True
 
     def draw_buttons(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -441,7 +463,7 @@ class GameMap:
                 if self.first_role.ID == 1:
                     if button_name == "move" or button_name == "attack":
                         self.world.current_action = button_name
-                        self.world.border_positions(self.first_role.x, self.first_role.y,
+                        self.world.border_positions(self.first_role.x, self.first_role.y, None,
                                                     range_type=self.world.current_action)
                         self.world.add_border(self.world.selected_border_positions, self.screen)
                         self.world.draw_border = True
@@ -479,9 +501,12 @@ class GameMap:
                 if event.button == 1:  # 左键点击
                     if self.world.current_action == "skill":
                         self.skill_button_click()
+                        self.world.check_click(pos)
+                        self.late_time = time.time()
                     elif any(button_rect.collidepoint(pos) for button_rect in self.buttons.values()):
                         self.handle_button_click(pos)
                         self.mouse_pressed = True
+                        self.late_time = time.time()
                     else:
                         self.world.check_click(pos)
                 elif event.button == 3:  # 右键按下开始拖动地图
@@ -550,7 +575,9 @@ class GameMap:
         return closest_point
 
     def enemy_act(self):
-        if time.time() - self.late_time > 1:
+        if not self.world.Action[0].act():
+            self.world.Action_change()
+        elif time.time() - self.late_time > 1:
             race = self.world.Action[0]
             pos_enemy = (race.x, race.y)
 
@@ -569,9 +596,10 @@ class GameMap:
                 if target:
                     size = self.world.tile_size
                     view = self.world.viewport_offset
-                    self.world.damage_show(race.attack(target), ((target.y-1/2)*size-view[0], (target.x-1/2)*size-view[1]))
+                    self.world.damage_show(race.attack(target),
+                                           ((target.y - 1 / 2) * size - view[0], (target.x - 1 / 2) * size - view[1]))
                     if target.health <= 0:
-                        self.world.dying_race = target
+                        self.world.dying_race.append(target)
             else:
                 for ally in self.world.Action:
                     if ally.ID == 1:
@@ -738,6 +766,7 @@ class World:
         # 地图瓦片上的角色
         self.races_place, self.enemy_place = load_role_place(self.data.shape, self.file_path)
         self.races_img = {}
+        self.using_skill = None
 
         # 行动表
         self.Action = []
@@ -750,7 +779,7 @@ class World:
 
         self.selected_race = None
         self.late_time = 0
-        self.dying_race = None  # 正在亖的角色
+        self.dying_race = []  # 正在亖的角色
         self.death_animation_index = 0
 
         # 按照speed属性排序
@@ -780,13 +809,15 @@ class World:
 
         return None
 
-    def border_positions(self, row, col, range_type='move'):
+    def border_positions(self, row, col, skill, range_type='move'):
         if self.find_race(row, col):
             unit = self.find_race(row, col)
             if range_type == 'move':
                 self.selected_border_positions = unit.move_border(row, col, self.data)
             elif range_type == 'attack':
                 self.selected_border_positions = unit.attack_border(row, col, self.data)
+            elif range_type == 'skill':
+                self.selected_border_positions = unit.calculate_range(row, col, skill, self.data)
         else:
             self.selected_border_positions = []
 
@@ -866,15 +897,14 @@ class World:
                     self.Action_change()
 
                     self.current_action = None  # 复位当前动作
-
-            if self.current_action == "attack" and (row, col) in self.selected_border_positions:
+            elif self.current_action == "attack" and (row, col) in self.selected_border_positions:
                 target = self.find_race(row, col)
                 if isinstance(target, enemy.EnemyUnit):
                     damage = self.Action[0].attack(target)
                     self.damage_show(damage, (pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1]-self.tile_size/2))
 
                     if target.health <= 0:
-                        self.dying_race = target
+                        self.dying_race.append(target)
 
                     self.draw_border = False
                     self.Action[0].action -= 25
@@ -882,6 +912,18 @@ class World:
                     self.current_action = None  # 复位当前动作
                 else:
                     print("Invalid target!")
+            elif self.current_action == "skill" and (row, col) in self.selected_border_positions:
+                target = self.find_race(row, col)
+                if isinstance(target, enemy.EnemyUnit):
+                    if self.using_skill == '冰封之环':
+                        target.ice(1)
+                    else:
+                        print(f'使用{self.using_skill}')
+
+                    self.draw_border = False
+                    self.Action[0].action -= 25
+                    self.Action_change()
+                    self.current_action = None  # 复位当前动作
 
     def redraw_img(self):
         self.dirt_img_scaled = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
@@ -894,20 +936,21 @@ class World:
 
     # 删除死亡的角色播放动画
     def death_animation(self):
-        index = self.Action.index(self.dying_race)
+        dying = self.dying_race[-1]
+        index = self.Action.index(dying)
 
         if time.time() - self.late_time > 0.1 and self.death_animation_index + 1 == len(self.Action[index].death):
-            x = self.dying_race.x
-            y = self.dying_race.y
+            x = dying.x
+            y = dying.y
 
-            if self.dying_race in self.Action:
-                if self.dying_race.ID == 1:
+            if dying in self.Action:
+                if dying.ID == 1:
                     self.races_place[x][y] = ''
                 else:
                     self.enemy_place[x][y] = ''
-                self.Action.remove(self.dying_race)
+                self.Action.remove(dying)
 
-            self.dying_race = None
+            self.dying_race.pop(-1)
             self.death_animation_index = 0
             self.late_time = time.time()
             return
