@@ -13,6 +13,7 @@ import os
 import shutil
 import random
 
+
 # 按键类（菜单中的按钮）
 class Button(object):
     def __init__(self, text, color, x=None, y=None, width=None, size=36, height=None, **kwargs):
@@ -35,12 +36,14 @@ class Button(object):
             self.y = y
 
     def display(self):
-        screen.blit(self.surface, (self.x + (self.width - self.surface.get_width()) // 2, self.y + (self.height - self.surface.get_height()) // 2))
+        screen.blit(self.surface, (
+        self.x + (self.width - self.surface.get_width()) // 2, self.y + (self.height - self.surface.get_height()) // 2))
 
     def check_click(self, position):
         x_match = self.x <= position[0] <= self.x + self.width
         y_match = self.y <= position[1] <= self.y + self.height
         return x_match and y_match
+
 
 # 菜单
 class Menu(object):
@@ -67,9 +70,10 @@ class Menu(object):
             elif self.continue_Button.check_click(position):
                 self.continue_game()
 
+
 # 游戏结束显示
 class Over(object):
-    def __init__(self, event_manager,level, state):
+    def __init__(self, event_manager, level, state):
         # 重来按钮
         self.restart_Button = Button("重新来过", WHITE, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
         # 下一关按钮
@@ -82,7 +86,7 @@ class Over(object):
         self.level = level
         # state = 1为胜利，= 2为失败
         self.state = state
-        
+
         # 胜利和失败显示
         if self.state == 1:
             self.title = 'Victory'
@@ -102,20 +106,20 @@ class Over(object):
         self.event_manager.post("show_main_page", self.event_manager)
 
     def next(self):
-        map =GameMap(self.level + 1, self.event_manager)
+        map = GameMap(self.level + 1, self.event_manager)
         map.run()
 
     def show(self):
         # 显示胜利或失败
         title_font = pygame.font.Font(art_path, 80)
-        title_surface =  title_font.render(self.title, True, BLACK)
-        screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 20))
-        
+        title_surface = title_font.render(self.title, True, BLACK)
+        screen.blit(title_surface, ((WIDTH // 2) - (title_surface.get_width() // 2), 20))
+
         # 如果胜利
         if self.state == 1:
             # 如果是最后一关
             if self.level == LEVEL:
-                text_surface =  art_font.render('恭喜冒险家，您已经走到了世界的尽头', True, BLACK)
+                text_surface = art_font.render('恭喜冒险家，您已经走到了世界的尽头', True, BLACK)
                 screen.blit(text_surface, (WIDTH // 2 - title_surface.get_width() // 2, 220))
             # 如果不是最后一关
             else:
@@ -145,7 +149,7 @@ class Over(object):
             return 3
             # self.return_to_main_page()
         return 0
-    
+
 
 # 战斗地图显示 
 class GameMap:
@@ -190,7 +194,7 @@ class GameMap:
         # 点击到的角色
         self.selected_info_rect = pygame.Rect(WIDTH - 200, 0, 200, 150)
         self.first_role = None
-        
+
         # 定义按钮
         self.button_height = HEIGHT - 60
         self.button_radius = 40  # 半径
@@ -339,13 +343,13 @@ class GameMap:
         info_bg = pygame.Surface((220, 100), pygame.SRCALPHA)
         info_bg.fill((0, 0, 0, 0))  # 半透明灰色背景
 
-        positions = [WIDTH-620, WIDTH-380]
+        positions = [WIDTH - 620, WIDTH - 380]
         for pos in positions:
             index = positions.index(pos)
             # 绘制圆角矩形
             pygame.draw.rect(info_bg, (128, 128, 128, 128), info_bg.get_rect(), border_radius=15)
 
-            self.screen.blit(info_bg, (pos, HEIGHT-100))  # 将半透明背景绘制到屏幕上
+            self.screen.blit(info_bg, (pos, HEIGHT - 100))  # 将半透明背景绘制到屏幕上
             font = pygame.font.Font(font_path, 16)
 
             if self.first_role.skills[index]['time1']:
@@ -358,7 +362,7 @@ class GameMap:
                         f"目标：{self.first_role.skills[index]['target']}        伤害类型:{self.first_role.skills[index]['type']}",
                         f"{self.first_role.skills[index]['description']}"]
 
-            height = HEIGHT-117
+            height = HEIGHT - 117
             for i, line in enumerate(info):
                 if i == 2:
                     font_dis = pygame.font.Font(font_path, 10)
@@ -377,10 +381,10 @@ class GameMap:
                     self.screen.blit(text, (pos + 10, height))
 
         # 绘制灰色圆形背景
-        pygame.draw.circle(self.screen, (128, 128, 128, 128), (WIDTH-100, HEIGHT-50), self.button_radius)
+        pygame.draw.circle(self.screen, (128, 128, 128, 128), (WIDTH - 100, HEIGHT - 50), self.button_radius)
         # 绘制按钮文字
         text = pygame.font.Font(font_path, 24).render("返回", True, BLACK)
-        text_rect = text.get_rect(center=(WIDTH-100, HEIGHT-50))
+        text_rect = text.get_rect(center=(WIDTH - 100, HEIGHT - 50))
         self.screen.blit(text, text_rect)
 
     def skill_button_click(self):
@@ -393,26 +397,12 @@ class GameMap:
             self.world.draw_border = True
         else:  # 技能
             for i, rect in enumerate(self.skill_boxes):
-                if rect.collidepoint(mouse_pos) and i == 0:
-                    if self.first_role.skills[0]['name'] == '冰封之环':
-                        self.world.border_positions(self.first_role.x, self.first_role.y,
-                                                    self.first_role.skills[i]['scope'],
-                                                    range_type=self.world.current_action)
-                        self.world.using_skill = '冰封之环'
-                        self.world.draw_border = True
-                        print(f'冰封之环')
-                    else:
-                        self.world.border_positions(self.first_role.x, self.first_role.y,
-                                                    self.first_role.skills[i]['scope'],
-                                                    range_type=self.world.current_action)
-                        self.world. using_skill = '其他'
-                        self.world.draw_border = True
-                if rect.collidepoint(mouse_pos) and i == 1:
-                    self.world.border_positions(self.first_role.x, self.first_role.y,
-                                                self.first_role.skills[i]['scope'],
-                                                range_type=self.world.current_action)
-                    self.world.using_skill = '其他'
-                    self.world.draw_border = True
+                skill = [self.first_role.skills[0]['name'], self.first_role.skills[1]['name']]
+                x, y = self.first_role.x, self.first_role.y
+                if rect.collidepoint(mouse_pos) and i == 0 and not self.first_role.skill_cd[0]:
+                    self.world.using_skills(skill[0], x, y, self.first_role.skills[i]['range'])
+                if rect.collidepoint(mouse_pos) and i == 1 and not self.first_role.skill_cd[1]:
+                    self.world.using_skills(skill[1], x, y, self.first_role.skills[i]['range'])
 
     def draw_buttons(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -518,7 +508,7 @@ class GameMap:
                 elif event.button == 5:
                     if self.world.tile_size > 20:
                         self.world.tile_size -= 1
-                    
+
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.mouse_pressed = False  # 重置鼠标按钮状态
@@ -530,7 +520,6 @@ class GameMap:
                 dy = self.start_drag_pos[1] - new_pos[1]
                 self.start_drag_pos = new_pos
                 self.world.viewport_offset = self.world.mov(self.world.viewport_offset, dx, dy)
-
         return True
 
     def draw_race_avatars(self, ):
@@ -543,7 +532,7 @@ class GameMap:
             # 绘制头像
             self.screen.blit(self.races_img[unit.name], (5, avatar_y))
 
-            total += unit.action*2
+            total += unit.action * 2
 
     # 按照进度条行动
     def action(self):
@@ -637,7 +626,7 @@ class GameMap:
     def show_menu(self):
         menu_image_rect = menu.get_rect(center=(WIDTH // 2 + 25, HEIGHT // 2))
         self.screen.blit(menu, menu_image_rect.topleft)
-        
+
         # 菜单显示
         pos = pygame.mouse.get_pos()
         if self.menu.active:
@@ -646,7 +635,7 @@ class GameMap:
             else:
                 self.menu.return_Button = Button("返回主页面", WHITE, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
             if self.menu.continue_Button.check_click(pos):
-                self.menu.continue_Button = Button("继续", RED, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50) 
+                self.menu.continue_Button = Button("继续", RED, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
             else:
                 self.menu.continue_Button = Button("继续", WHITE, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
         self.menu.return_Button.display()
@@ -671,12 +660,12 @@ class GameMap:
 
             # 绘制菜单图片
             self.show_menu()
-    
+
     # 如果只剩敌人或己方
     def check_action(self):
         has_ally_unit = any(isinstance(action, ally.AllyUnit) for action in self.world.Action)
         has_enemy_unit = any(isinstance(action, enemy.EnemyUnit) for action in self.world.Action)
-        
+
         # 如果没有己方角色了
         if not has_ally_unit:
             self.over = Over(self.event_manager, self.level, 2)
@@ -689,7 +678,7 @@ class GameMap:
             self.over.show()
             # 关卡结束
             self.state = True
-    
+
     def run(self):
         self.load_state()
         run = True
@@ -714,7 +703,7 @@ class GameMap:
                 # self.draw_info()
                 self.over.show()  # 显示结束菜单
                 pygame.display.update()
-                
+
                 # 处理事件并检查是否要退出结束状态
                 if not self.events():
                     run = False
@@ -736,6 +725,7 @@ class GameMap:
         elif self.flag == 3:
             self.over.return_to_main_page()
         pygame.quit()
+
 
 # 地图信息
 class World:
@@ -763,6 +753,7 @@ class World:
         self.viewport_offset = [0, 0]
         # 瓦片列表
         self.tile_list = []
+
         # 地图瓦片上的角色
         self.races_place, self.enemy_place = load_role_place(self.data.shape, self.file_path)
         self.races_img = {}
@@ -791,6 +782,14 @@ class World:
         # 判断当前是攻击还是移动
         self.current_action = None
 
+    def calcu_cd(self):
+        for role in self.Action:
+            cd_1, cd_2 = role.skill_cd
+            if cd_1 > 0:
+                role.skill_cd[0] -= 1
+            if cd_2 > 0:
+                role.skill_cd[1] -= 1
+
     def Action_change(self):
         if self.Action[0].ID == 2:
             race = self.Action.pop(0)
@@ -800,6 +799,8 @@ class World:
             race = self.Action.pop(0)
             race.action = race.speed
             self.Action.append(race)
+
+        self.calcu_cd()
 
     # 返回该瓦片上的角色
     def find_race(self, row, col):
@@ -873,6 +874,16 @@ class World:
         img_tile = (img, img_rect)
         self.tile_list.append(Lattice(img_tile, map_tile, 0, None, race))
 
+    def using_skills(self, skill, x, y, range):
+        self.border_positions(x, y, range, range_type=self.current_action)
+        self.using_skill = skill
+        self.draw_border = True
+
+    def check_health(self, target):
+        if target.health <= 0:
+            target.state['death'] = 1
+            self.dying_race.append(target)
+
     def check_click(self, pos):
         x, y = pos
         x += self.viewport_offset[0]
@@ -901,10 +912,10 @@ class World:
                 target = self.find_race(row, col)
                 if isinstance(target, enemy.EnemyUnit):
                     damage = self.Action[0].attack(target)
-                    self.damage_show(damage, (pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1]-self.tile_size/2))
+                    self.damage_show(damage,
+                                     (pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1] - self.tile_size / 2))
 
-                    if target.health <= 0:
-                        self.dying_race.append(target)
+                    self.check_health(target)
 
                     self.draw_border = False
                     self.Action[0].action -= 25
@@ -917,9 +928,14 @@ class World:
                 if isinstance(target, enemy.EnemyUnit):
                     if self.using_skill == '冰封之环':
                         target.ice(1)
+                    elif self.using_skill == '魔力冲击':
+                        self.damage_show(self.Action[0].attack(target, self.Action[0].skills[1]['multiplier']),
+                                         (x, y - self.tile_size / 2))
+                        self.check_health(target)
                     else:
                         print(f'使用{self.using_skill}')
 
+                    self.Action[0].skill_cd[0] = self.Action[0].skills[0]['cd']
                     self.draw_border = False
                     self.Action[0].action -= 25
                     self.Action_change()
@@ -1002,6 +1018,12 @@ class World:
             if tile.race:
                 race = self.find_race(tile.type[1].y // self.tile_size, tile.type[1].x // self.tile_size)
                 viewport.blit(self.races_img[race.name], (tile_x, tile_y))
+
+                if 'ice' in race.state:
+                    box = pygame.Surface((self.tile_size, self.tile_size))
+                    box.set_alpha(100)
+                    box.fill((0, 0, 255))
+                    viewport.blit(box, (tile_x, tile_y))
             else:
                 viewport.blit(tile.type[0], (tile_x, tile_y))
 

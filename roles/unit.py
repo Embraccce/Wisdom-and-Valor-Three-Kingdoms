@@ -20,6 +20,7 @@ class Unit:
         self.action = self.speed  # 行动值
 
         self.state = {}  # 状态
+        self.skill_cd = [0, 0]
 
         if name == "莱欧斯":
             self.skills = [{
@@ -56,7 +57,7 @@ class Unit:
                     'name': '冰封之环',
                     'target': 'enemy',
                     'type': 'magic',
-                    'range': 0,
+                    'range': 4,
                     'scope': 4,
                     'effect1': '禁锢',
                     'time1': 1,
@@ -243,6 +244,8 @@ class Unit:
             if self.state['ice'] == 0:
                 self.state.pop('ice')
             return False
+        elif 'death' in self.state:
+            return False
         return True
 
     def ice(self, num):
@@ -253,10 +256,10 @@ class Unit:
         # 单位移动的方法，具体逻辑待实现
         pass
 
-    def attack(self, target):
+    def attack(self, target, multiplier=1):
         # 单位进行物理攻击的方法
         damage = max(0, self.attack_power - target.physical_def)
-        target.health -= 100#damage
+        target.health -= 100*multiplier  # damage
         return damage
 
     def in_attack_range(self, target):
