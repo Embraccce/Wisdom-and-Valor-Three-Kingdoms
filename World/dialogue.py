@@ -29,20 +29,18 @@ class Dialogue:
         self.background_img = pygame.transform.scale(self.background_img, (width, height))
 
     def wrap_text(self, text, font, max_width):
-        words = text.split()
         lines = []
         current_line = []
 
-        for word in words:
+        for word in text:
             current_line.append(word)
-            width, _ = font.size(' '.join(current_line))
-            if width > max_width:
+            if font.size(''.join(current_line))[0] > max_width:
                 current_line.pop()
-                lines.append(' '.join(current_line))
+                lines.append(''.join(current_line))
                 current_line = [word]
 
         if current_line:
-            lines.append(' '.join(current_line))
+            lines.append(''.join(current_line))
 
         return lines
 
@@ -58,7 +56,7 @@ class Dialogue:
                 dialogue_lines = self.wrap_text(dialogue, self.font, self.max_width)
                 for i, line in enumerate(dialogue_lines):
                     dialogue_surface = self.font.render(line, True, self.text_color)
-                    screen.blit(dialogue_surface, (10, self.height - 160 + i * 30))
+                    screen.blit(dialogue_surface, (10, self.height - 140 + i * 30))
             else:
                 # 其他对话
                 character, dialogue = self.dialogues[self.index]

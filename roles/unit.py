@@ -4,9 +4,9 @@ class Unit:
         self.ID = ID  # 单位编号ID
         self.name = name  # 单位名称
         self.health = health  # 当前生命值
-        self.max_health = health # 最大的生命值
+        self.max_health = health  # 最大的生命值
         self.magic = magic  # 当前魔力值
-        self.max_magic = magic # 最大的魔力
+        self.max_magic = magic  # 最大的魔力
         self.attack_power = attack_power  # 物理攻击力
         self.magic_power = magic_power  # 魔法攻击力
         self.attack_range = attack_range  # 攻击距离
@@ -250,19 +250,30 @@ class Unit:
             return False
         return True
 
-    def ice(self, num):
-        # 一回合不能动
-        self.state['ice'] = num
+    def add_state(self, state, num):
+        # 添加状态
+        self.state[state] = num
 
     def move_to(self, target):
         # 单位移动的方法，具体逻辑待实现
         pass
 
-    def attack(self, target, multiplier=1):
-        # 单位进行物理攻击的方法
-        damage = max(0, self.attack_power - target.physical_def)
-        target.health -= 85*multiplier  # damage
-        return damage
+    def attack(self, target, multiplier=1, attack_type='physical'):
+        if 'ton' in target.state:
+            # 有护盾不减血
+            target.state['ton'] -= 1
+            if target.state['ton'] == 0:
+                target.state.pop('ton')
+            return 0
+        else:
+            if attack_type == 'physical':
+                # 单位进行物理攻击的方法
+                damage = max(0, self.attack_power - target.physical_def)
+            else:
+                damage = max(0, self.magic_power - target.magic_def)
+
+            target.health -= 85*multiplier  # damage
+            return damage
 
     def in_attack_range(self, target):
         # 检查目标是否在攻击范围内

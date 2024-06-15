@@ -466,9 +466,30 @@ class GameMap:
                 skill = [self.first_role.skills[0]['name'], self.first_role.skills[1]['name']]
                 x, y = self.first_role.x, self.first_role.y
                 if rect.collidepoint(mouse_pos) and i == 0 and not self.first_role.skill_cd[0]:
-                    self.world.using_skills(skill[0], x, y, self.first_role.skills[i]['range'])
+                    if skill[0] == '坚韧之盾':
+                        self.first_role.add_state('ton', 1)
+                        self.first_role.skill_cd[0] = self.first_role.skills[0]['cd']
+                        self.world.draw_border = False
+                        self.first_role.action -= 25
+                        self.world.Action_change()
+                        self.world.current_action = None  # 复位当前动作
+                    else:
+                        self.world.using_skills(skill[0], x, y, self.first_role.skills[0]['range'],
+                                                self.first_role.skills[i]['type'])
                 if rect.collidepoint(mouse_pos) and i == 1 and not self.first_role.skill_cd[1]:
-                    self.world.using_skills(skill[1], x, y, self.first_role.skills[i]['range'])
+                    if skill[1] == '审判之刃':
+                        self.world.tile_data.append([self.first_role, 0, self.first_role.skills[1]['time1'],
+                                                     self.first_role.calculate_range(x, y, 1, self.world.data),
+                                                     self.first_role.attack_power*1.5])
+
+                        self.first_role.skill_cd[1] = self.first_role.skills[1]['cd']
+                        self.world.draw_border = False
+                        self.first_role.action -= 25
+                        self.world.Action_change()
+                        self.world.current_action = None  # 复位当前动作
+                    else:
+                        self.world.using_skills(skill[1], x, y, self.first_role.skills[1]['range'],
+                                                self.first_role.skills[i]['type'])
 
     def draw_buttons(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -839,7 +860,9 @@ class World:
         # 地图瓦片上的角色
         self.races_place, self.enemy_place = load_role_place(self.data.shape, self.file_path)
         self.races_img = {}
-        self.using_skill = None
+        self.using_skill = []
+
+        self.tile_data = []
 
         # 行动表
         self.Action = []
@@ -872,7 +895,20 @@ class World:
             if cd_2 > 0:
                 role.skill_cd[1] -= 1
 
+        for data in self.tile_data:
+            data[2] -= 1
+            if data[2] <= 0:
+                self.tile_data.pop(self.tile_data.index(data))
+
     def Action_change(self):
+        for role in self.Action:
+            if role.ID == 2:
+                for data in self.tile_data:
+                    if (role.x, role.y) in data[3]:
+                        role.health -= data[4]
+                        self.damage_show(data[4], (role.x, role.y - self.tile_size / 2))
+                        self.check_health(role)
+
         if self.Action[0].ID == 2:
             race = self.Action.pop(0)
             self.Action.append(race)
@@ -956,9 +992,9 @@ class World:
         img_tile = (img, img_rect)
         self.tile_list.append(Lattice(img_tile, map_tile, 0, None, race))
 
-    def using_skills(self, skill, x, y, range):
+    def using_skills(self, skill, x, y, range, type):
         self.border_positions(x, y, range, range_type=self.current_action)
-        self.using_skill = skill
+        self.using_skill = [skill, type]
         self.draw_border = True
 
     def check_health(self, target):
@@ -1007,22 +1043,24 @@ class World:
                     print("Invalid target!")
             elif self.current_action == "skill" and (row, col) in self.selected_border_positions:
                 target = self.find_race(row, col)
+                role = self.Action[0]
                 if isinstance(target, enemy.EnemyUnit):
-                    if self.using_skill == '冰封之环':
-                        self.damage_show(self.Action[0].attack(target, self.Action[0].skills[0]['multiplier']),
-                                         (x, y - self.tile_size / 2))
-                        target.ice(1)
+                    print(self.using_skill[0])
+                    if self.using_skill[0] == '冰封之环' or self.using_skill[0] == '机关大师':
+                        self.damage_show(role.attack(target, role.skills[0]['multiplier'],
+                                                     self.using_skill[1]), (x, y - self.tile_size / 2))
+                        target.add_state('ice', 1)
                         self.check_health(target)
-                    elif self.using_skill == '魔力冲击':
-                        self.damage_show(self.Action[0].attack(target, self.Action[0].skills[1]['multiplier']),
-                                         (x, y - self.tile_size / 2))
+                    elif self.using_skill[0] == '魔力冲击':
+                        self.damage_show(role.attack(target, role.skills[1]['multiplier'],
+                                                     self.using_skill[1]), (x, y - self.tile_size / 2))
                         self.check_health(target)
                     else:
                         print(f'使用{self.using_skill}')
 
-                    self.Action[0].skill_cd[0] = self.Action[0].skills[0]['cd']
+                    role.skill_cd[0] = role.skills[0]['cd']
                     self.draw_border = False
-                    self.Action[0].action -= 25
+                    role.action -= 25
                     self.Action_change()
                     self.current_action = None  # 复位当前动作
 
@@ -1109,6 +1147,12 @@ class World:
                     box.set_alpha(100)
                     box.fill((0, 0, 255))
                     viewport.blit(box, (tile_x, tile_y))
+
+                if 'ton' in race.state:
+                    box = pygame.Surface((self.tile_size, self.tile_size))
+                    box.set_alpha(100)
+                    box.fill((255, 0, 0))
+                    viewport.blit(box, (tile_x, tile_y))
             else:
                 viewport.blit(tile.type[0], (tile_x, tile_y))
 
@@ -1130,3 +1174,22 @@ class World:
 
         # 移除已经完全消失的伤害文本
         self.damage_texts = [dt for dt in self.damage_texts if dt.alpha > 0]
+
+        for data in self.tile_data:
+            # 旋转角度更新
+            data[1] += 1
+            if data[1] >= 360:
+                data[1] = 0
+
+            y = data[0].x * self.tile_size - self.viewport_offset[0]
+            x = data[0].y * self.tile_size - self.viewport_offset[1]
+
+            # 绘制圆环
+            for i in range(360):
+                if i % 10 == 0:  # 控制点的间隔
+                    rad = math.radians(i + data[1])
+                    inner_x = int(x + self.tile_size * math.cos(rad)) + self.tile_size / 2
+                    inner_y = int(y + self.tile_size * math.sin(rad)) + self.tile_size / 2
+                    outer_x = int(x + 1.1 * self.tile_size * math.cos(rad)) + self.tile_size / 2
+                    outer_y = int(y + 1.1 * self.tile_size * math.sin(rad)) + self.tile_size / 2
+                    pygame.draw.line(viewport, (0, 0, 255), (inner_x, inner_y), (outer_x, outer_y), 2)
