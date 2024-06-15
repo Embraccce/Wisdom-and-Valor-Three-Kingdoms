@@ -260,12 +260,30 @@ class Unit:
                     'description': '菊朗如疾风般突袭敌人，以迅雷不及掩耳之势对目标造成极大伤害。这项技能让他能够在战场上以高速度迅速切入敌方阵型，对目标造成致命打击。'
                 }
             ]
-        else:  # 敌人数据
+        elif name == "葛瑞格":   # 敌人数据1
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [60, 60, 30, 30,
+                                                                                                        20, 1, 2, 10,
+                                                                                                        10, 15, 3, 3]
+            self.img = "res/imgs/characters/1.png"
+        elif name == "艾尔文":  # 敌人数据2
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [60, 60, 50, 50,
+                                                                                                        15, 30, 3, 5,
+                                                                                                        15, 25, 5, 3]
+            self.img = "res/imgs/enemies/2.png"
+        elif name == "巴西利斯克":  # 敌人数据3
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [60, 60, 20, 20,
+                                                                                                        25, 5, 2, 10,
+                                                                                                        10, 20, 4, 2]
+            self.img = "res/imgs/enemies/3.png"
+        else:  # 敌人数据 地图中角色不存在时
             (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
              self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [70, 70, 30, 30,
                                                                                                         25, 1, 1, 10,
                                                                                                         10, 25, 5, 3]
-            self.img = "res/imgs/enemies/1.png"
+            self.img = "res/imgs/enemies/3.png"
 
         self.action = self.speed  # 行动值
 
