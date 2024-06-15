@@ -372,10 +372,18 @@ class GameMap:
         if self.world.current_action != "skill":
             # 绘制按钮
             self.draw_buttons()
+        print(pygame.mouse.get_pos())
 
         # 绘制生命条
         if fixed_character_info:
             self.draw_bars(fixed_character_info, 70, HEIGHT - 70)
+        i = 0
+        for buff_name, buff in fixed_character_info.state.items():
+            if buff_name == 'ice':
+                self.screen.blit(self.world.ice_img_scaled, (120+i*26, HEIGHT - 95))
+            elif buff_name == 'ton':
+                self.screen.blit(self.world.dodge_img_scaled, (120+i*26, HEIGHT - 95))
+            i += 1
 
     # 鼠标悬浮显示信息框
     def draw_selected_info(self):
@@ -1097,8 +1105,8 @@ class World:
         self.dirt_img_scaled = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
         self.grass_img_scaled = pygame.transform.scale(self.grass_img, (self.tile_size, self.tile_size))
         self.detail_img_scaled = pygame.transform.scale(self.detail_img, (self.tile_size, self.tile_size))
-        self.ice_img_scaled = pygame.transform.scale(self.ice_img, (self.tile_size / 5, self.tile_size / 5))
-        self.dodge_img_scaled = pygame.transform.scale(self.dodge_img, (self.tile_size / 5, self.tile_size / 5))
+        self.ice_img_scaled = pygame.transform.scale(self.ice_img, (20, 20))
+        self.dodge_img_scaled = pygame.transform.scale(self.dodge_img, (20, 20))
 
         for r in self.Action:
             self.races_img[r.name] = pygame.transform.scale(pygame.image.load(r.img), (self.tile_size, self.tile_size))
@@ -1173,12 +1181,12 @@ class World:
             if tile.race:
                 race = self.find_race(tile.type[1].y // self.tile_size, tile.type[1].x // self.tile_size)
                 viewport.blit(self.races_img[race.name], (tile_x, tile_y))
+                if race.ID == 2:
+                    if 'ice' in race.state:
+                        viewport.blit(self.ice_img_scaled, (tile_x, tile_y))
 
-                if 'ice' in race.state:
-                    viewport.blit(self.ice_img_scaled, (tile_x, tile_y))
-
-                if 'ton' in race.state:
-                    viewport.blit(self.dodge_img_scaled, (tile_x, tile_y))
+                    if 'ton' in race.state:
+                        viewport.blit(self.dodge_img_scaled, (tile_x, tile_y))
 
             rect = pygame.Rect(tile_x, tile_y, self.tile_size, self.tile_size)
             pygame.draw.rect(viewport, (255, 255, 255), rect, 1)
