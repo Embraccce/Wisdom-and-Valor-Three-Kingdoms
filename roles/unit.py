@@ -1,30 +1,21 @@
 class Unit:
-    def __init__(self, ID, name, health, magic, attack_power, magic_power, attack_range, physical_def, magic_def, speed,
-                 move, jump):
+    def __init__(self, ID, name):
         self.ID = ID  # 单位编号ID
         self.name = name  # 单位名称
-        self.health = health  # 当前生命值
-        self.max_health = health  # 最大的生命值
-        self.magic = magic  # 当前魔力值
-        self.max_magic = magic  # 最大的魔力
-        self.attack_power = attack_power  # 物理攻击力
-        self.magic_power = magic_power  # 魔法攻击力
-        self.attack_range = attack_range  # 攻击距离
-        self.physical_def = physical_def  # 物理防御
-        self.magic_def = magic_def  # 魔法防御
-        self.speed = speed  # 动作速度，决定单位行动顺序
-        self.move = move  # 移动力，决定单位在地图上的移动能力
-        self.jump = jump  # 跳跃力，用于有高度差的地图
         self.action_time = 0  # 行动时间点，用于决定单位何时进行下一个动作
         self.death = ["res/imgs/characters/1.png", "res/imgs/characters/2.png", "res/imgs/characters/3.png"]
         self.x = None  # 所在x轴
         self.y = None  # 所在y轴
-        self.action = self.speed  # 行动值
 
         self.state = {}  # 状态
         self.skill_cd = [0, 0]
 
         if name == "莱欧斯":
+            self.img = "res/imgs/characters/1.png"
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [70, 70, 30, 30,
+                                                                                                        30, 1, 4, 8, 10,
+                                                                                                        35, 5, 4]
             self.skills = [{
                 'name': '坚韧之盾',
                 'target': 'friend',
@@ -54,6 +45,11 @@ class Unit:
                     'description': '莱欧斯挥舞审判之剑，对敌人造成巨大的伤害，并施加一定的惩罚效果。'
                 }]
         elif name == "玛露希尔":
+            self.img = "res/imgs/characters/2.png"
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [70, 70, 50, 50,
+                                                                                                        15, 25, 4, 10,
+                                                                                                        15, 10, 2, 1]
             self.skills = [
                 {
                     'name': '冰封之环',
@@ -85,6 +81,11 @@ class Unit:
                 }
             ]
         elif name == "齐尔查克":
+            self.img = "res/imgs/characters/3.png"
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [70, 70, 30, 30,
+                                                                                                        20, 20, 3, 8, 8,
+                                                                                                        28, 3, 6]
             self.skills = [
                 {
                     'name': '机关大师',
@@ -116,6 +117,11 @@ class Unit:
                 }
             ]
         elif name == "森西":
+            self.img = "res/imgs/characters/4.png"
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [90, 90, 30, 30,
+                                                                                                        20, 1, 1, 15,
+                                                                                                        10, 25, 6, 2]
             self.skills = [
                 {
                     'name': '钢铁意志',
@@ -147,6 +153,11 @@ class Unit:
                 }
             ]
         elif name == "法琳":
+            self.img = "res/imgs/characters/5.png"
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [70, 70, 30, 30,
+                                                                                                        10, 25, 2, 10,
+                                                                                                        15, 30, 4, 2]
             self.skills = [
                 {
                     'name': '自然护佑',
@@ -178,6 +189,11 @@ class Unit:
                 }
             ]
         elif name == "娜玛莉":
+            self.img = "res/imgs/characters/6.png"
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [80, 80, 30, 30,
+                                                                                                        25, 1, 1, 15,
+                                                                                                        10, 30, 6, 2]
             self.skills = [
                 {
                     'name': '战意风暴',
@@ -209,6 +225,11 @@ class Unit:
                 }
             ]
         elif name == "菊朗":
+            self.img = "res/imgs/characters/7.png"
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [70, 70, 30, 30,
+                                                                                                        35, 1, 1, 10,
+                                                                                                        10, 37, 7, 3]
             self.skills = [
                 {
                     'name': '绝影剑技',
@@ -239,6 +260,14 @@ class Unit:
                     'description': '菊朗如疾风般突袭敌人，以迅雷不及掩耳之势对目标造成极大伤害。这项技能让他能够在战场上以高速度迅速切入敌方阵型，对目标造成致命打击。'
                 }
             ]
+        else:  # 敌人数据
+            (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
+             self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [70, 70, 30, 30,
+                                                                                                        25, 1, 1, 10,
+                                                                                                        10, 25, 5, 3]
+            self.img = "res/imgs/enemies/1.png"
+
+        self.action = self.speed  # 行动值
 
     def act(self):
         if 'ice' in self.state and self.state['ice'] > 0:
@@ -272,7 +301,7 @@ class Unit:
             else:
                 damage = max(0, self.magic_power - target.magic_def)
 
-            target.health -= 85*multiplier  # damage
+            target.health -= 85 * multiplier  # damage
             return damage
 
     def in_attack_range(self, target):

@@ -10,5 +10,5 @@ event_manager = EventManager()
 startup_screen = StartupScreen(screen)
 
 if __name__ == '__main__': 
-    startup_screen.show()
+    # startup_screen.show()
     home_page(event_manager)
