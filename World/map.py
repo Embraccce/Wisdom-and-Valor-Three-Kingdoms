@@ -483,7 +483,7 @@ class GameMap:
             for i, rect in enumerate(self.skill_boxes):
                 skill = [self.first_role.skills[0]['name'], self.first_role.skills[1]['name']]
                 x, y = self.first_role.x, self.first_role.y
-                if rect.collidepoint(mouse_pos) and i == 0 and not self.first_role.skill_cd[0]:
+                if rect.collidepoint(mouse_pos) and i == 0 and not self.first_role.skill_cd[0] and self.first_role.magic:
                     if skill[0] == '坚韧之盾':
                         self.first_role.add_state('ton', 1)
                         self.first_role.skill_cd[0] = self.first_role.skills[0]['cd']
@@ -1084,6 +1084,8 @@ class World:
                         role.add_state('move', 1)
                     else:
                         print(f'使用{self.using_skill}')
+
+                    role.magic -= 5
 
                     role.skill_cd[0] = role.skills[0]['cd']
                     self.draw_border = False
