@@ -104,7 +104,35 @@ class Over(object):
             os.remove(save_path)
 
         map.run()
+    def check_mouse(self):
+        pos = pygame.mouse.get_pos()
+        if self.return_Button.check_click(pos):
+            self.return_Button = Button("返回主页面", RED, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
+        else:
+            self.return_Button = Button("返回主页面", WHITE, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 50)
 
+        if self.restart_Button.check_click(pos):
+            self.restart_Button = Button("重新来过", RED, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
+        else:
+            self.restart_Button = Button("重新来过", WHITE, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
+        if self.next_Button.check_click(pos):
+            self.next_Button = Button("下一关", RED, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
+        else:
+            self.next_Button = Button("下一关", WHITE, WIDTH // 2 - 100, HEIGHT // 2 - 50, 200, 50)
+        # 如果胜利
+        if self.state == 1:
+            # 如果是最后一关
+            if self.level == LEVEL:
+                i = 1
+            # 如果不是最后一关
+            else:
+                self.next_Button.display()
+            self.return_Button.display()
+        # 如果失败
+        else:
+            self.restart_Button.display()
+            self.return_Button.display()
+        pygame.display.update()
     def return_to_main_page(self):
         self.event_manager.post("show_main_page", self.event_manager)
 
@@ -123,7 +151,7 @@ class Over(object):
             # 如果是最后一关
             if self.level == LEVEL:
                 text_surface = art_font.render('恭喜冒险家，您已经走到了世界的尽头', True, BLACK)
-                screen.blit(text_surface, (WIDTH // 2 - title_surface.get_width() // 2, 220))
+                screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, 220))
             # 如果不是最后一关
             else:
                 self.next_Button.display()
@@ -789,12 +817,18 @@ class GameMap:
             # 检查关卡是否结束
             self.check_action()
 
+            if self.state:
+                # 创建一个透明的 Surface 作为遮罩
+                mask = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+                mask.fill(TRANSPARENT_GRAY)
+                self.screen.blit(mask, (0, 0))
+                self.over.show()
             # 如果结束，则显示结束菜单并等待用户点击
             while self.state:
                 # self.screen.blit(self.cloud_img, (0, 0))
                 # self.world.draw(self.screen)
                 # self.draw_info()
-                self.over.show()  # 显示结束菜单
+                self.over.check_mouse()  # 显示结束菜单
                 pygame.display.update()
 
                 # 处理事件并检查是否要退出结束状态
