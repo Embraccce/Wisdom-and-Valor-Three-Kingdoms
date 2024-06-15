@@ -1181,8 +1181,8 @@ class World:
             if data[1] >= 360:
                 data[1] = 0
 
-            y = data[0].x * self.tile_size - self.viewport_offset[0]
-            x = data[0].y * self.tile_size - self.viewport_offset[1]
+            y = data[0].x * self.tile_size - self.viewport_offset[1]
+            x = data[0].y * self.tile_size - self.viewport_offset[0]
 
             # 绘制圆环
             for i in range(360):
