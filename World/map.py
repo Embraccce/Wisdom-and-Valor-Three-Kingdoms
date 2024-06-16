@@ -372,7 +372,6 @@ class GameMap:
         if self.world.current_action != "skill":
             # 绘制按钮
             self.draw_buttons()
-        print(pygame.mouse.get_pos())
 
         # 绘制生命条
         if fixed_character_info:
@@ -1070,7 +1069,6 @@ class World:
                 target = self.find_race(row, col)
                 role = self.Action[0]
                 if isinstance(target, enemy.EnemyUnit):
-                    print(self.using_skill[0])
                     if self.using_skill[0] == '冰封之环' or self.using_skill[0] == '机关大师':
                         self.damage_show(role.attack(target, role.skills[0]['multiplier'],
                                                      self.using_skill[1]), (x, y - self.tile_size / 2))

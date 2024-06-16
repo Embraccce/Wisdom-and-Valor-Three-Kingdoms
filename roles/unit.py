@@ -265,7 +265,7 @@ class Unit:
              self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [60, 60, 30, 30,
                                                                                                         20, 1, 2, 10,
                                                                                                         10, 15, 3, 3]
-            self.img = "res/imgs/characters/1.png"
+            self.img = "res/imgs/enemies/1.png"
         elif name == "艾尔文":  # 敌人数据2
             (self.health, self.max_health, self.magic, self.max_magic, self.attack_power, self.magic_power,
              self.attack_range, self.physical_def, self.magic_def, self.speed, self.move, self.jump) = [60, 60, 50, 50,
