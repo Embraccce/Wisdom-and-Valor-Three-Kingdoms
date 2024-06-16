@@ -3,7 +3,8 @@ class Unit:
         self.ID = ID  # 单位编号ID
         self.name = name  # 单位名称
         self.action_time = 0  # 行动时间点，用于决定单位何时进行下一个动作
-        self.death = ["res/imgs/characters/1.png", "res/imgs/characters/2.png", "res/imgs/characters/3.png"]
+        self.death_pos = 'res/imgs/death/1.gif'
+        self.death_img = []
         self.x = None  # 所在x轴
         self.y = None  # 所在y轴
 

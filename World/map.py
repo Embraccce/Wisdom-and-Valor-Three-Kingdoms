@@ -12,6 +12,7 @@ import roles.ally_unit as ally
 import roles.enemy_unit as enemy
 import time
 import os
+from PIL import Image
 import shutil
 import random
 
@@ -897,6 +898,9 @@ class World:
                 elif self.enemy_place[x][y]:
                     self.Action.append(enemy.EnemyUnit(2, self.enemy_place[x][y], x=x, y=y))
 
+        for role in self.Action:
+            role.death_img = self.load_gif(role)
+
         self.selected_race = None
         self.late_time = 0
         self.dying_race = []  # 正在亖的角色
@@ -1110,12 +1114,27 @@ class World:
             self.races_img[r.name] = pygame.transform.scale(pygame.image.load(r.img), (self.tile_size, self.tile_size))
         self.tile_size_old = self.tile_size
 
+    def load_gif(self, role):
+        # 使用 Pillow 打开 GIF 文件
+        gif = Image.open(role.death_pos)
+        frames = role.death_img
+        try:
+            while True:
+                # 将每一帧转换为 Pygame 兼容的图像
+                frame = gif.convert('RGBA')
+                frame_data = pygame.image.fromstring(frame.tobytes(), frame.size, frame.mode)
+                frames.append(frame_data)
+                gif.seek(gif.tell() + 1)
+        except EOFError:
+            pass
+        return frames
+
     # 删除死亡的角色播放动画
     def death_animation(self):
         dying = self.dying_race[-1]
         index = self.Action.index(dying)
 
-        if time.time() - self.late_time > 0.1 and self.death_animation_index + 1 == len(self.Action[index].death):
+        if time.time() - self.late_time > 0.1 and self.death_animation_index + 1 == len(self.Action[index].death_img):
             x = dying.x
             y = dying.y
 
@@ -1133,8 +1152,7 @@ class World:
 
         if time.time() - self.late_time > 0.1:
             self.death_animation_index += 1
-            self.Action[index].img = self.Action[index].death[self.death_animation_index]
-            self.redraw_img()
+            self.races_img[self.Action[index].name] = pygame.transform.scale(self.Action[index].death_img[self.death_animation_index], (self.tile_size, self.tile_size))
             self.late_time = time.time()
 
     def damage_show(self, damage, pos):
