@@ -268,7 +268,8 @@ class GameMap:
             ("旁白", "莱欧斯劝说无果，唯有打断他们的战斗，才能进入迷宫。")
         ], WIDTH, HEIGHT)
 
-    def save_state(self, filename="save/game_state.pkl"):
+    def save_state(self):
+        filename = f"save/leve{self.level}.pkl"
         for role in self.world.Action:
             role.death_img.clear()
         # 确保保存目录存在
@@ -282,7 +283,8 @@ class GameMap:
             pickle.dump(state, f)
 
     # 从文件加载状态
-    def load_state(self, filename="save/game_state.pkl"):
+    def load_state(self):
+        filename = f"save/leve{self.level}.pkl"
         if os.path.exists(filename):
             with open(filename, "rb") as f:
                 state = pickle.load(f)
@@ -844,8 +846,6 @@ class GameMap:
                 run = self.events()
                 pygame.display.update()
         # 如果退出循环
-        # 删除存档
-        os.remove('save/game_state.pkl')
         if self.flag == 1:
             self.over.next()
         elif self.flag == 2:
