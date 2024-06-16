@@ -269,6 +269,8 @@ class GameMap:
         ], WIDTH, HEIGHT)
 
     def save_state(self, filename="save/game_state.pkl"):
+        for role in self.world.Action:
+            role.death_img.clear()
         # 确保保存目录存在
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         state = {
