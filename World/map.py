@@ -12,6 +12,7 @@ import roles.ally_unit as ally
 import roles.enemy_unit as enemy
 import time
 import os
+from PIL import Image
 import shutil
 import random
 
@@ -104,6 +105,7 @@ class Over(object):
             os.remove(save_path)
 
         map.run()
+
     def check_mouse(self):
         pos = pygame.mouse.get_pos()
         if self.return_Button.check_click(pos):
@@ -133,6 +135,7 @@ class Over(object):
             self.restart_Button.display()
             self.return_Button.display()
         pygame.display.update()
+
     def return_to_main_page(self):
         self.event_manager.post("show_main_page", self.event_manager)
 
@@ -246,7 +249,8 @@ class GameMap:
 
         self.races_img = {}
         for r in self.world.Action:
-            self.races_img[r.name] = pygame.transform.scale(pygame.image.load(r.img), (20, 20))
+            self.races_img[r.name] = pygame.transform.scale(pygame.transform.rotate(pygame.image.load(r.img), -90),
+                                                            (20, 20))
 
         self.act = False
 
@@ -265,6 +269,8 @@ class GameMap:
         ], WIDTH, HEIGHT)
 
     def save_state(self, filename="save/game_state.pkl"):
+        for role in self.world.Action:
+            role.death_img.clear()
         # 确保保存目录存在
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         state = {
@@ -345,30 +351,17 @@ class GameMap:
                 break
 
         # 加载头像
-        avatar_path = "res/imgs/characters/1.png"  # 头像路径，可以根据实际情况动态获取
-        avatar_img = pygame.image.load(avatar_path).convert_alpha()
+        avatar_img = pygame.image.load(fixed_character_info.img).convert_alpha()
         avatar_img = pygame.transform.scale(avatar_img, (50, 50))  # 调整头像大小
 
         # 绘制头像
-        self.screen.blit(avatar_img, (10, HEIGHT - 90))
+        self.screen.blit(avatar_img, (10, HEIGHT - 80))
 
         # 角色其他信息
         if fixed_character_info:
-            info = [
-                f"{fixed_character_info.name}", "",
-                # f"物理攻击: {fixed_character_info.attack_power}",
-                # f"物理防御: {fixed_character_info.physical_def}",
-                # f"魔法攻击: {fixed_character_info.magic_power}",
-                # f"魔法防御: {fixed_character_info.magic_def}"
-            ]
+            info = [f"{fixed_character_info.name}", ""]
         else:
-            info = [
-                f"咩???", "",
-                # f"物理攻击: 咩",
-                # f"物理防御: 咩",
-                # f"魔法攻击: 咩",
-                # f"魔法防御: 咩"
-            ]
+            info = [f"咩???", ""]
 
         # 绘制角色信息（每列两个信息）
         for i, line in enumerate(info):
@@ -386,6 +379,13 @@ class GameMap:
         # 绘制生命条
         if fixed_character_info:
             self.draw_bars(fixed_character_info, 70, HEIGHT - 70)
+        i = 0
+        for buff_name, buff in fixed_character_info.state.items():
+            if buff_name == 'ice':
+                self.screen.blit(self.world.ice_img_scaled, (120+i*26, HEIGHT - 95))
+            elif buff_name == 'ton':
+                self.screen.blit(self.world.dodge_img_scaled, (120+i*26, HEIGHT - 95))
+            i += 1
 
     # 鼠标悬浮显示信息框
     def draw_selected_info(self):
@@ -493,7 +493,7 @@ class GameMap:
             for i, rect in enumerate(self.skill_boxes):
                 skill = [self.first_role.skills[0]['name'], self.first_role.skills[1]['name']]
                 x, y = self.first_role.x, self.first_role.y
-                if rect.collidepoint(mouse_pos) and i == 0 and not self.first_role.skill_cd[0]:
+                if rect.collidepoint(mouse_pos) and i == 0 and not self.first_role.skill_cd[0] and self.first_role.magic:
                     if skill[0] == '坚韧之盾':
                         self.first_role.add_state('ton', 1)
                         self.first_role.skill_cd[0] = self.first_role.skills[0]['cd']
@@ -505,19 +505,8 @@ class GameMap:
                         self.world.using_skills(skill[0], x, y, self.first_role.skills[0]['range'],
                                                 self.first_role.skills[i]['type'])
                 if rect.collidepoint(mouse_pos) and i == 1 and not self.first_role.skill_cd[1]:
-                    if skill[1] == '审判之刃':
-                        self.world.tile_data.append([self.first_role, 0, self.first_role.skills[1]['time1'],
-                                                     self.first_role.calculate_range(x, y, 1, self.world.data),
-                                                     self.first_role.attack_power*1.5])
-
-                        self.first_role.skill_cd[1] = self.first_role.skills[1]['cd']
-                        self.world.draw_border = False
-                        self.first_role.action -= 25
-                        self.world.Action_change()
-                        self.world.current_action = None  # 复位当前动作
-                    else:
-                        self.world.using_skills(skill[1], x, y, self.first_role.skills[1]['range'],
-                                                self.first_role.skills[i]['type'])
+                    self.world.using_skills(skill[1], x, y, self.first_role.skills[1]['range'],
+                                            self.first_role.skills[i]['type'])
 
     def draw_buttons(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -591,7 +580,7 @@ class GameMap:
                     if event.button == 1:
                         self.menu.handle_click(pygame.mouse.get_pos())
             # 如果游戏结束
-            elif self.state == True:
+            elif self.state:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         if self.over.handle_click(pygame.mouse.get_pos()) != 0:
@@ -877,14 +866,18 @@ class World:
         self.tile_size = 50
         self.tile_size_old = 0
 
-        self.dirt_img = pygame.image.load('res/imgs/d.png')
-        self.grass_img = pygame.image.load('res/imgs/g.png')
-        self.detail_img = pygame.image.load("res/imgs/detail.png")
+        self.dirt_img = pygame.image.load('res/imgs/tile/1.jpg')
+        self.grass_img = pygame.image.load('res/imgs/tile/2.jpg')
+        self.detail_img = pygame.image.load("res/imgs/tile/3.jpg")
+        self.ice_img = pygame.image.load("res/imgs/buff/3.png")
+        self.dodge_img = pygame.image.load("res/imgs/buff/12.png")
 
         # 缓存缩放后的图像
-        self.dirt_img_scaled = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
-        self.grass_img_scaled = pygame.transform.scale(self.grass_img, (self.tile_size, self.tile_size))
-        self.detail_img_scaled = pygame.transform.scale(self.detail_img, (self.tile_size, self.tile_size))
+        self.dirt_img_scaled = None
+        self.grass_img_scaled = None
+        self.detail_img_scaled = None
+        self.ice_img_scaled = None
+        self.dodge_img_scaled = None
 
         # 设置初始视口偏移量
         self.viewport_offset = [0, 0]
@@ -906,6 +899,9 @@ class World:
                     self.Action.append(ally.AllyUnit(1, self.races_place[x][y], x=x, y=y))
                 elif self.enemy_place[x][y]:
                     self.Action.append(enemy.EnemyUnit(2, self.enemy_place[x][y], x=x, y=y))
+
+        for role in self.Action:
+            role.death_img = self.load_gif(role)
 
         self.selected_race = None
         self.late_time = 0
@@ -1079,7 +1075,6 @@ class World:
                 target = self.find_race(row, col)
                 role = self.Action[0]
                 if isinstance(target, enemy.EnemyUnit):
-                    print(self.using_skill[0])
                     if self.using_skill[0] == '冰封之环' or self.using_skill[0] == '机关大师':
                         self.damage_show(role.attack(target, role.skills[0]['multiplier'],
                                                      self.using_skill[1]), (x, y - self.tile_size / 2))
@@ -1089,8 +1084,20 @@ class World:
                         self.damage_show(role.attack(target, role.skills[1]['multiplier'],
                                                      self.using_skill[1]), (x, y - self.tile_size / 2))
                         self.check_health(target)
+                    elif self.using_skill[0] == '机关大师':
+                        self.damage_show(role.attack(target, role.skills[0]['multiplier'],
+                                                     self.using_skill[1]), (x, y - self.tile_size / 2))
+                        target.add_state('ice', 1)
+                        self.check_health(target)
+                    elif self.using_skill[0] == '审判之刃':
+                        self.tile_data.append([role, 0, role.skills[1]['time1'],
+                                               role.calculate_range(x, y, 1, self.data), role.attack_power * 1.5])
+                    elif self.using_skill[0] == '疾速闪避':
+                        role.add_state('move', 1)
                     else:
                         print(f'使用{self.using_skill}')
+
+                    role.magic -= 5
 
                     role.skill_cd[0] = role.skills[0]['cd']
                     self.draw_border = False
@@ -1102,17 +1109,34 @@ class World:
         self.dirt_img_scaled = pygame.transform.scale(self.dirt_img, (self.tile_size, self.tile_size))
         self.grass_img_scaled = pygame.transform.scale(self.grass_img, (self.tile_size, self.tile_size))
         self.detail_img_scaled = pygame.transform.scale(self.detail_img, (self.tile_size, self.tile_size))
+        self.ice_img_scaled = pygame.transform.scale(self.ice_img, (20, 20))
+        self.dodge_img_scaled = pygame.transform.scale(self.dodge_img, (20, 20))
 
         for r in self.Action:
             self.races_img[r.name] = pygame.transform.scale(pygame.image.load(r.img), (self.tile_size, self.tile_size))
         self.tile_size_old = self.tile_size
+
+    def load_gif(self, role):
+        # 使用 Pillow 打开 GIF 文件
+        gif = Image.open(role.death_pos)
+        frames = role.death_img
+        try:
+            while True:
+                # 将每一帧转换为 Pygame 兼容的图像
+                frame = gif.convert('RGBA')
+                frame_data = pygame.image.fromstring(frame.tobytes(), frame.size, frame.mode)
+                frames.append(frame_data)
+                gif.seek(gif.tell() + 1)
+        except EOFError:
+            pass
+        return frames
 
     # 删除死亡的角色播放动画
     def death_animation(self):
         dying = self.dying_race[-1]
         index = self.Action.index(dying)
 
-        if time.time() - self.late_time > 0.1 and self.death_animation_index + 1 == len(self.Action[index].death):
+        if time.time() - self.late_time > 0.1 and self.death_animation_index + 1 == len(self.Action[index].death_img):
             x = dying.x
             y = dying.y
 
@@ -1130,8 +1154,7 @@ class World:
 
         if time.time() - self.late_time > 0.1:
             self.death_animation_index += 1
-            self.Action[index].img = self.Action[index].death[self.death_animation_index]
-            self.redraw_img()
+            self.races_img[self.Action[index].name] = pygame.transform.scale(self.Action[index].death_img[self.death_animation_index], (self.tile_size, self.tile_size))
             self.late_time = time.time()
 
     def damage_show(self, damage, pos):
@@ -1172,23 +1195,19 @@ class World:
             tile_x = tile.type[1].x - self.viewport_offset[0]
             tile_y = tile.type[1].y - self.viewport_offset[1]
 
+            viewport.blit(tile.type[0], (tile_x, tile_y))
             if tile.race:
                 race = self.find_race(tile.type[1].y // self.tile_size, tile.type[1].x // self.tile_size)
                 viewport.blit(self.races_img[race.name], (tile_x, tile_y))
+                if race.ID == 2:
+                    if 'ice' in race.state:
+                        viewport.blit(self.ice_img_scaled, (tile_x, tile_y))
 
-                if 'ice' in race.state:
-                    box = pygame.Surface((self.tile_size, self.tile_size))
-                    box.set_alpha(100)
-                    box.fill((0, 0, 255))
-                    viewport.blit(box, (tile_x, tile_y))
+                    if 'ton' in race.state:
+                        viewport.blit(self.dodge_img_scaled, (tile_x, tile_y))
 
-                if 'ton' in race.state:
-                    box = pygame.Surface((self.tile_size, self.tile_size))
-                    box.set_alpha(100)
-                    box.fill((255, 0, 0))
-                    viewport.blit(box, (tile_x, tile_y))
-            else:
-                viewport.blit(tile.type[0], (tile_x, tile_y))
+            rect = pygame.Rect(tile_x, tile_y, self.tile_size, self.tile_size)
+            pygame.draw.rect(viewport, (255, 255, 255), rect, 1)
 
         mouse_pos = pygame.mouse.get_pos()
         # 鼠标所处位置加边框
