@@ -671,11 +671,14 @@ def home_page(event_manager):
     # game_title = font.render('GAME OF THRONE', True, WHITE)
     # screen.blit(game_title, (WIDTH//2 - game_title.get_WIDTH()//2, 150))
 
+    # 定义偏移量
+    offset_x = 160  # 偏移量，可以根据需要调整
+
     # 绘制主页面按钮
-    continue_button = Button('继续游戏', GREY, None, 250, centered_x=True)
-    play_button = Button('开始游戏', WHITE, None, 300, centered_x=True)
-    library_button = Button('游戏图鉴', WHITE, None, 350, centered_x=True)
-    exit_button = Button('保存并退出', WHITE, None, 400, centered_x=True)
+    continue_button = Button('继续游戏', GREY, WIDTH // 2 + offset_x, 250)
+    play_button = Button('开始游戏', WHITE, WIDTH // 2 + offset_x, 300)
+    library_button = Button('游戏图鉴', WHITE, WIDTH // 2 + offset_x, 350)
+    exit_button = Button('保存退出', WHITE, WIDTH // 2 + offset_x, 400)
 
     continue_button.display()
     play_button.display()
@@ -697,31 +700,31 @@ def home_page(event_manager):
     # 显示标题
      # 显示关卡选择字体
     title_font = pygame.font.Font(art_path, 80)
-    title_surface = title_font.render("这是游戏标题", True, BLACK)
-    screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 80))
+    title_surface = title_font.render("迷宫饭", True, WHITE)
+    screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2 + 220, 80))
 
     while True:
         if game_level == 0:
-            continue_button = Button('继续游戏', GREY, None, 250, centered_x=True)
+            continue_button = Button('继续游戏', GREY, WIDTH // 2 + offset_x, 250)
         elif continue_button.check_click(pygame.mouse.get_pos()):
-            continue_button = Button('继续游戏', RED, None, 250, centered_x=True)
+            continue_button = Button('继续游戏', RED, WIDTH // 2 + offset_x, 250)
         else:
-            continue_button = Button('继续游戏', WHITE, None, 250, centered_x=True)
+            continue_button = Button('继续游戏', WHITE, WIDTH // 2 + offset_x, 250)
 
         if play_button.check_click(pygame.mouse.get_pos()):
-            play_button = Button('开始游戏', RED, None, 300, centered_x=True)
+            play_button = Button('开始游戏', RED, WIDTH // 2 + offset_x, 300)
         else:
-            play_button = Button('开始游戏', WHITE, None, 300, centered_x=True)
+            play_button = Button('开始游戏', WHITE, WIDTH // 2 + offset_x, 300)
 
         if library_button.check_click(pygame.mouse.get_pos()):
-            library_button = Button('游戏图鉴', RED, None, 350, centered_x=True)
+            library_button = Button('游戏图鉴', RED, WIDTH // 2 + offset_x, 350)
         else:
-            library_button = Button('游戏图鉴', WHITE, None, 350, centered_x=True)
+            library_button = Button('游戏图鉴', WHITE, WIDTH // 2 + offset_x, 350)
 
         if exit_button.check_click(pygame.mouse.get_pos()):
-            exit_button = Button('保存并退出', RED, None, 400, centered_x=True)
+            exit_button = Button('保存退出', RED, WIDTH // 2 + offset_x, 400)
         else:
-            exit_button = Button('保存并退出', WHITE, None, 400, centered_x=True)
+            exit_button = Button('保存退出', WHITE, WIDTH // 2 + offset_x, 400)
 
         continue_button.display()
         play_button.display()
