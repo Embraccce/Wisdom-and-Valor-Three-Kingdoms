@@ -672,13 +672,13 @@ def home_page(event_manager):
     # screen.blit(game_title, (WIDTH//2 - game_title.get_WIDTH()//2, 150))
 
     # 定义偏移量
-    offset_x = 50  # 偏移量，可以根据需要调整
+    offset_x = 160  # 偏移量，可以根据需要调整
 
     # 绘制主页面按钮
     continue_button = Button('继续游戏', GREY, WIDTH // 2 + offset_x, 250)
     play_button = Button('开始游戏', WHITE, WIDTH // 2 + offset_x, 300)
     library_button = Button('游戏图鉴', WHITE, WIDTH // 2 + offset_x, 350)
-    exit_button = Button('保存并退出', WHITE, WIDTH // 2 + offset_x, 400)
+    exit_button = Button('保存退出', WHITE, WIDTH // 2 + offset_x, 400)
 
     continue_button.display()
     play_button.display()
@@ -700,8 +700,8 @@ def home_page(event_manager):
     # 显示标题
      # 显示关卡选择字体
     title_font = pygame.font.Font(art_path, 80)
-    title_surface = title_font.render("迷宫饭", True, BLACK)
-    screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2, 80))
+    title_surface = title_font.render("迷宫饭", True, WHITE)
+    screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2 + 220, 80))
 
     while True:
         if game_level == 0:
@@ -722,9 +722,9 @@ def home_page(event_manager):
             library_button = Button('游戏图鉴', WHITE, WIDTH // 2 + offset_x, 350)
 
         if exit_button.check_click(pygame.mouse.get_pos()):
-            exit_button = Button('保存并退出', RED, WIDTH // 2 + offset_x, 400)
+            exit_button = Button('保存退出', RED, WIDTH // 2 + offset_x, 400)
         else:
-            exit_button = Button('保存并退出', WHITE, WIDTH // 2 + offset_x, 400)
+            exit_button = Button('保存退出', WHITE, WIDTH // 2 + offset_x, 400)
 
         continue_button.display()
         play_button.display()
