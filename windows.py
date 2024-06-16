@@ -57,8 +57,8 @@ class StartupScreen:
         self.font = pygame.font.Font(art_path, 74)
         self.small_font = pygame.font.Font(art_path, 50)
         self.steps = [
-            ("这是一个游戏样本", (WIDTH // 2 - 320, HEIGHT // 2 - 100), self.font),
-            ("出品人：游戏开发委员会", (WIDTH // 2 - 300, HEIGHT // 2 + 50), self.small_font)
+            ("迷宫饭", (WIDTH // 2 - 120, HEIGHT // 2 - 100), self.font),
+            ("出品人：迷宫饭开发委员会", (WIDTH // 2 - 300, HEIGHT // 2 + 50), self.small_font)
         ]
         self.current_step = 0
 

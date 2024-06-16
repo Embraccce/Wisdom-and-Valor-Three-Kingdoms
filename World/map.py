@@ -839,9 +839,6 @@ class GameMap:
 
             # 如果没有进入结束状态，处理事件并更新屏幕内容
             if run and not self.state:
-                run = self.events()
-                pygame.display.update()
-
                 # 处理事件并更新屏幕内容
                 run = self.events()
                 pygame.display.update()
