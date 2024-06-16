@@ -18,7 +18,16 @@ def initialize():
 
 
 initialize()
-
+# 检查是否有存档
+# if os.path.exists('save/game_state.pkl'):
+#     try:
+#         os.remove('save/game_state.pkl')
+#     except PermissionError:
+#         print(f"Permission denied: Unable to delete {'save/game_state.pkl'}.")
+#     except Exception as e:
+#         print(f"Error: {e}")
+# else:
+#     print(f"{'save/game_state.pkl'} does not exist.")
 # 初始化窗口
 HEIGHT = 500
 WIDTH = 1000
@@ -31,7 +40,7 @@ FPS = 60
 TRANSPARENT_GRAY = (128, 128, 128, 128)
 
 # 关卡
-LEVEL = 1
+LEVEL = 12
 
 # 加载宋体字体文件
 font_path = "simhei.ttf"  # 这里是你放置宋体字体文件的路径

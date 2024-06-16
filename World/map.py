@@ -844,6 +844,8 @@ class GameMap:
                 run = self.events()
                 pygame.display.update()
         # 如果退出循环
+        # 删除存档
+        os.remove('save/game_state.pkl')
         if self.flag == 1:
             self.over.next()
         elif self.flag == 2:

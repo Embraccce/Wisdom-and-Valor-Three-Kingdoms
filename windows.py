@@ -323,10 +323,6 @@ class DetailPage:
         if self.type != 3:
             # 显示描述信息
             description = self.info.get("personality_traits", "")
-            # info_surface = self.small_font.render("人物性格：", True, BLACK)
-            # self.screen.blit(info_surface, (x_offset, y_offset))
-            # y_offset += 30
-            # lines = self.wrap_text(description, self.small_font, 2)  # Adjust the max width as needed
             lines = textwrap.wrap(description, 41)
             for line in lines:
                 info_surface = self.small_font.render(line, True, BLACK)
@@ -337,10 +333,6 @@ class DetailPage:
 
             # 显示人物故事
             story = self.info.get("character_story", "")
-            # info_surface = self.small_font.render("人物故事：", True, BLACK)
-            # self.screen.blit(info_surface, (x_offset, y_offset))
-            # y_offset += 30
-            # story_lines = self.wrap_text(story, self.small_font, 2)  # Adjust the max width as needed
             story_lines = textwrap.wrap(story, 41)
             for line in story_lines:
                 story_surface = self.small_font.render(line, True, BLACK)
