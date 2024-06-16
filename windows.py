@@ -7,6 +7,7 @@ from pygame.locals import *
 from init import *
 import textwrap
 import threading
+import warnings
 
 clock = pygame.time.Clock()
 clock.tick(FPS)
@@ -276,6 +277,7 @@ class DetailPage:
         return self.character_info[self.character_info['id'] == id_value].iloc[0]
 
     def render(self):
+        warnings.filterwarnings("ignore", category=UserWarning, module="pygame")
         # 加载背景图
         screen.blit(library_bg, (0, 0))
 
@@ -301,23 +303,55 @@ class DetailPage:
         y_offset = 80
 
         attributes = [key for key in self.info.keys() if key not in ["name", "image", "personality_traits","character_story", "description"]]
+        # 定义缩放后的图标宽度
+        ICON_WIDTH = 25
+
+        def get_attr_surface(attr, value):
+            image_path = f"res/imgs/property/{attr}.png"
+            if os.path.exists(image_path):
+                image = pygame.image.load(image_path)
+                image = pygame.transform.scale(image, (ICON_WIDTH, int(image.get_height() * (ICON_WIDTH / image.get_width()))))
+                text_surface = self.small_font.render(f": {value}", True, BLACK)
+                return (image, text_surface)
+            else:
+                return self.small_font.render(f"{attr}: {value}", True, BLACK)
+
         for i in range(0, len(attributes), 2):
-            # 针对武器的property进行修改
             attr1 = attributes[i]
             attr2 = attributes[i + 1] if i + 1 < len(attributes) else ""
-            attr1_surface = self.small_font.render(f"{attr1}: {self.info[attr1]}", True, BLACK)
-            attr2_surface = self.small_font.render(f"{attr2}: {self.info[attr2]}", True, BLACK) if attr2 else None
-            
-            # 如果是property，就变成对应的属性
+
+            # 初始化属性表面
+            attr1_surface = get_attr_surface(attr1, self.info[attr1])
+
+            if attr2:
+                attr2_surface = get_attr_surface(attr2, self.info[attr2])
+            else:
+                attr2_surface = None
+
+            # 特殊处理 property1 和 property2
             if attr1 == 'property1':
-                attr1_surface = self.small_font.render(f"{self.info[attr1]}: {self.info[attr2]}", True, BLACK)
-                attr2_surface = self.small_font.render(f"{self.info[attributes[i+2]]}: {self.info[attributes[i+3]]}", True, BLACK)
+                attr1_surface = get_attr_surface(self.info[attr1], self.info[attr2])
+                attr2_surface = get_attr_surface(self.info[attributes[i+2]], self.info[attributes[i+3]])
             if attr1 == 'property2':
                 continue
 
-            self.screen.blit(attr1_surface, (x_offset, y_offset))
+            # 显示属性1
+            if isinstance(attr1_surface, tuple):
+                image, text = attr1_surface
+                self.screen.blit(image, (x_offset, y_offset))
+                self.screen.blit(text, (x_offset + image.get_width(), y_offset))
+            else:
+                self.screen.blit(attr1_surface, (x_offset, y_offset))
+
+            # 显示属性2
             if attr2_surface:
-                self.screen.blit(attr2_surface, (x_offset + 300, y_offset))
+                if isinstance(attr2_surface, tuple):
+                    image, text = attr2_surface
+                    self.screen.blit(image, (x_offset + 300, y_offset))
+                    self.screen.blit(text, (x_offset + 300 + image.get_width(), y_offset))
+                else:
+                    self.screen.blit(attr2_surface, (x_offset + 300, y_offset))
+
             y_offset += 30
 
         if self.type != 3:
@@ -348,7 +382,7 @@ class DetailPage:
                 story_surface = self.small_font.render(line, True, BLACK)
                 self.screen.blit(story_surface, (x_offset, y_offset))
                 y_offset += 30
-
+        
         pygame.display.flip()
 
     def wrap_text(self, text, font, max_width):
