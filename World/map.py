@@ -270,8 +270,6 @@ class GameMap:
 
     def save_state(self):
         filename = f"save/leve{self.level}.pkl"
-        for role in self.world.Action:
-            role.death_img.clear()
         # 确保保存目录存在
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         state = {
@@ -293,8 +291,19 @@ class GameMap:
             self.world.Action = state["Action"]
 
     def draw_bars(self, character_info, x, y):
-        # 计算生命值百分比
-        health_percentage = character_info.health / character_info.max_health
+        if character_info is None:
+            health_percentage = 0
+            max_health = 0
+            health = 0
+            max_magic = 0
+            magic = 0
+        else:
+            # 计算生命值百分比
+            health_percentage = character_info.health / character_info.max_health
+            max_health = character_info.max_health
+            health = character_info.health
+            max_magic = character_info.max_magic
+            magic = character_info.magic
         health_bar_length = int(health_percentage * 196)  # 计算生命条长度
 
         # 绘制生命条背景
@@ -313,13 +322,13 @@ class GameMap:
 
         # 绘制生命值文本
         font = pygame.font.Font(font_path, 20)
-        health_text = f"{character_info.health}/{character_info.max_health}"
+        health_text = f"{health}/{max_health}"
         health_text_surf = font.render(health_text, True, BLACK)
         health_text_rect = health_text_surf.get_rect(center=(x + 210 + health_text_surf.get_width() // 2, y + 12))
         self.screen.blit(health_text_surf, health_text_rect.topleft)
 
         # 计算魔力值百分比
-        magic_percentage = character_info.magic / character_info.max_magic
+        magic_percentage = magic / max_magic
         magic_bar_length = int(magic_percentage * 196)  # 计算魔力条长度
 
         # 绘制魔力条背景
@@ -329,7 +338,7 @@ class GameMap:
         pygame.draw.rect(self.screen, (0, 0, 255), (x + 2, y + 32, magic_bar_length, 20))
 
         # 绘制魔力值文本
-        magic_text = f"{character_info.magic}/{character_info.max_magic}"
+        magic_text = f"{magic}/{max_magic}"
         magic_text_surf = font.render(magic_text, True, BLACK)
         magic_text_rect = magic_text_surf.get_rect(center=(x + 210 + magic_text_surf.get_width() // 2, y + 42))
         self.screen.blit(magic_text_surf, magic_text_rect.topleft)
@@ -352,8 +361,10 @@ class GameMap:
                 fixed_character_info = None
                 break
 
-        # 加载头像
-        avatar_img = pygame.image.load(fixed_character_info.img).convert_alpha()
+        if fixed_character_info:
+            avatar_img = pygame.image.load(fixed_character_info.img).convert_alpha()
+        else:
+            avatar_img = pygame.image.load('res/imgs/default.png').convert_alpha()
         avatar_img = pygame.transform.scale(avatar_img, (50, 50))  # 调整头像大小
 
         # 绘制头像
@@ -381,13 +392,16 @@ class GameMap:
         # 绘制生命条
         if fixed_character_info:
             self.draw_bars(fixed_character_info, 70, HEIGHT - 70)
-        i = 0
-        for buff_name, buff in fixed_character_info.state.items():
-            if buff_name == 'ice':
-                self.screen.blit(self.world.ice_img_scaled, (120+i*26, HEIGHT - 95))
-            elif buff_name == 'ton':
-                self.screen.blit(self.world.dodge_img_scaled, (120+i*26, HEIGHT - 95))
-            i += 1
+
+        if fixed_character_info:
+            i = 0
+            for buff_name, buff in fixed_character_info.state.items():
+                if buff_name == 'ice':
+                    self.screen.blit(self.world.ice_img_scaled, (120+i*26, HEIGHT - 95))
+                elif buff_name == 'ton':
+                    self.screen.blit(self.world.dodge_img_scaled, (120+i*26, HEIGHT - 95))
+                i += 1
+
 
     # 鼠标悬浮显示信息框
     def draw_selected_info(self):
@@ -899,8 +913,7 @@ class World:
                 elif self.enemy_place[x][y]:
                     self.Action.append(enemy.EnemyUnit(2, self.enemy_place[x][y], x=x, y=y))
 
-        for role in self.Action:
-            role.death_img = self.load_gif(role)
+        self.death_img = self.load_gif()
 
         self.selected_race = None
         self.late_time = 0
@@ -1115,10 +1128,10 @@ class World:
             self.races_img[r.name] = pygame.transform.scale(pygame.image.load(r.img), (self.tile_size, self.tile_size))
         self.tile_size_old = self.tile_size
 
-    def load_gif(self, role):
+    def load_gif(self):
         # 使用 Pillow 打开 GIF 文件
-        gif = Image.open(role.death_pos)
-        frames = role.death_img
+        gif = Image.open('res/imgs/death/1.gif')
+        frames = []
         try:
             while True:
                 # 将每一帧转换为 Pygame 兼容的图像
@@ -1135,7 +1148,7 @@ class World:
         dying = self.dying_race[-1]
         index = self.Action.index(dying)
 
-        if time.time() - self.late_time > 0.1 and self.death_animation_index + 1 == len(self.Action[index].death_img):
+        if time.time() - self.late_time > 0.1 and self.death_animation_index + 1 == len(self.death_img):
             x = dying.x
             y = dying.y
 
@@ -1153,7 +1166,8 @@ class World:
 
         if time.time() - self.late_time > 0.1:
             self.death_animation_index += 1
-            self.races_img[self.Action[index].name] = pygame.transform.scale(self.Action[index].death_img[self.death_animation_index], (self.tile_size, self.tile_size))
+            self.races_img[self.Action[index].name] = pygame.transform.scale(self.death_img[self.death_animation_index],
+                                                                             (self.tile_size, self.tile_size))
             self.late_time = time.time()
 
     def damage_show(self, damage, pos):
