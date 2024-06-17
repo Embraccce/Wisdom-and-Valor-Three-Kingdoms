@@ -733,9 +733,9 @@ def home_page(event_manager):
 
     # 显示标题
      # 显示关卡选择字体
-    title_font = pygame.font.Font(art_path, 80)
-    title_surface = title_font.render("迷宫饭", True, WHITE)
-    screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2 + 220, 80))
+    # title_font = pygame.font.Font(art_path, 80)
+    # title_surface = title_font.render("迷宫饭", True, WHITE)
+    # screen.blit(title_surface, (WIDTH // 2 - title_surface.get_width() // 2 + 220, 80))
 
     while True:
         if game_level == 0:
